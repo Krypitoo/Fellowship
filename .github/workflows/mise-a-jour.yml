@@ -1,0 +1,55 @@
+name: Mise a jour du site
+
+on:
+  schedule:
+    - cron: "17 4 * * *"      # chaque nuit vers 5 h (heure de Paris en hiver)
+  workflow_dispatch:           # bouton "Run workflow" pour lancer a la main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mise-a-jour
+  cancel-in-progress: false
+
+jobs:
+  maj:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Reprend les reponses deja telechargees (les combats ne changent jamais)
+      - uses: actions/cache/restore@v4
+        with:
+          path: cache
+          key: api-cache-${{ github.run_id }}
+          restore-keys: api-cache-
+
+      - name: Collecte des builds (Fellowship Logs)
+        env:
+          FELLOWSHIP_CLIENT_ID: ${{ secrets.FELLOWSHIP_CLIENT_ID }}
+          FELLOWSHIP_CLIENT_SECRET: ${{ secrets.FELLOWSHIP_CLIENT_SECRET }}
+        run: python comparer_builds.py --all --top 30 > collecte.log 2>&1 || (tail -40 collecte.log; exit 1)
+
+      # Sauvegarde le cache meme si la collecte a echoue a mi-chemin
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: cache
+          key: api-cache-${{ github.run_id }}
+
+      - name: Generation du site
+        run: python build_site.py resultats/builds_*.json -o docs/index.html
+
+      - name: Publication
+        run: |
+          git config user.name "maj-auto"
+          git config user.email "maj-auto@users.noreply.github.com"
+          git add docs/index.html
+          git diff --cached --quiet || git commit -m "Mise a jour des builds $(date -u +%F)"
+          git push
