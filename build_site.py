@@ -83,7 +83,16 @@ def counted(counter, n, top=None):
     return [{"name": k, "pct": pct(c, n), "n": c} for k, c in counter.most_common(top)]
 
 
-def level_table(per_build, n, top):
+MAX_LEVEL = 8   # au-dela, regroupe dans la derniere colonne
+
+
+def distribution(levels):
+    """{niveau: nombre de builds}, niveaux > MAX_LEVEL regroupes."""
+    d = Counter(min(int(round(v)), MAX_LEVEL) for v in levels)
+    return {str(k): c for k, c in sorted(d.items())}
+
+
+def level_table(per_build, n, top, with_dist=False):
     """per_build : liste de Counter {nom: total}. -> % builds, mediane et zone courante."""
     pres = Counter()
     for d in per_build:
@@ -92,8 +101,11 @@ def level_table(per_build, n, top):
     for name, c in pres.most_common(top):
         vals = [d[name] for d in per_build if d.get(name, 0) > 0]
         q1, q3 = quart(vals)
-        out.append({"name": name, "pct": pct(c, n), "median": r1(med(vals)),
-                    "q1": r1(q1), "q3": r1(q3)})
+        row = {"name": name, "pct": pct(c, n), "n": c, "median": r1(med(vals)),
+               "q1": r1(q1), "q3": r1(q3)}
+        if with_dist:
+            row["dist"] = distribution(vals)
+        out.append(row)
     return out
 
 
@@ -200,6 +212,7 @@ def aggregate(builds):
     # Traits (arme + objets fusionnes) et enchantements (total cumule des rangs)
     traits_pb, ench_pb, bless_pb = [], [], []
     trait_pres = Counter()
+    present_pb = []
     for b in builds:
         tr, en, bl = Counter(), Counter(), Counter()
         present = set()
@@ -221,16 +234,19 @@ def aggregate(builds):
             if nm and a.get("type") != 1024 and not is_ench(nm) and a.get("total", 0) >= 1:
                 present.add(nm)
         trait_pres.update(present)
+        present_pb.append(present)
         traits_pb.append(tr)
         ench_pb.append(en)
         bless_pb.append(bl)
     traits = []
-    for name, c in trait_pres.most_common(10):
+    for name, c in trait_pres.most_common(14):
         vals = [d[name] for d in traits_pb if d.get(name, 0) > 0]
-        traits.append({"name": name, "pct": pct(c, n), "median": r1(med(vals))})
+        levels = [d.get(name, 0) for d, pr in zip(traits_pb, present_pb) if name in pr]
+        traits.append({"name": name, "pct": pct(c, n), "n": c, "median": r1(med(vals)),
+                       "dist": distribution(levels)})
     A["traits"] = traits
     A["enchants"] = level_table(ench_pb, n, 6)
-    A["blessings"] = level_table(bless_pb, n, 8)
+    A["blessings"] = level_table(bless_pb, n, 10, with_dist=True)
     return A
 
 

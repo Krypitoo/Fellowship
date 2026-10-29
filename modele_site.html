@@ -83,6 +83,16 @@ td.n small{color:var(--mute)}
 .it.leg{color:var(--legend)}
 .note{color:var(--mute);font-size:12.5px;margin:8px 0 0}
 .empty{color:var(--mute);font-size:14px;margin:0}
+table.heat{min-width:380px}
+.heat th.c,.heat td.c{text-align:center;font-family:var(--mono);width:34px;padding:6px 2px}
+.heat td.n small{display:block}
+.cols2{columns:2;column-gap:32px}
+.cols2 .row{break-inside:avoid}
+@media (max-width:760px){.cols2{columns:1}}
+.heat td.c{background:color-mix(in srgb,var(--accent) calc(var(--a,0)*100%),transparent);color:var(--ink);border-left:2px solid var(--panel)}
+.heat td.c.hot{color:var(--panel);font-weight:500}
+.heat td.c.zero{background:none}
+.heat tr.core td:first-child{font-weight:600}
 footer{color:var(--mute);font-size:13px;padding-block:0 32px}
 @media (max-width:480px){.statrow{grid-template-columns:72px minmax(0,1fr) 92px}.row{grid-template-columns:minmax(0,1fr) 28% 46px}}
 @media (prefers-reduced-motion:no-preference){.fill{transition:width .35s ease}}
@@ -123,6 +133,21 @@ function levelTable(list, head){
   }</tbody></table></div>`;
 }
 
+// Repartition des niveaux : une colonne par niveau total, intensite = part des builds de la ligne
+function heatTable(list, head){
+  if(!list.length) return '<p class="empty">Aucune donnée.</p>';
+  const keys = [...new Set(list.flatMap(x=>Object.keys(x.dist||{})))].map(Number).sort((a,b)=>a-b);
+  const lab = k => k===0 ? "arme" : (k>=8 ? "8+" : k);
+  return `<div class="scroll"><table class="heat"><thead><tr><th>${head}</th><th class="n">Builds</th><th class="n">Méd.</th>${
+    keys.map(k=>`<th class="c">${lab(k)}</th>`).join("")}</tr></thead><tbody>${
+    list.map(x=>{
+      const tot = Object.values(x.dist||{}).reduce((a,b)=>a+b,0) || 1;
+      return `<tr class="${x.pct>=50?"core":""}"><td>${esc(x.name)}</td><td class="n">${x.n} <small>(${P(x.pct)})</small></td><td class="n">${fr(x.median,x.median%1?1:0)}</td>${
+        keys.map(k=>{ const c=(x.dist||{})[k]||0; const a=c?0.12+0.88*c/tot:0;
+          return `<td class="c${c?"":" zero"}${a>0.6?" hot":""}" style="--a:${a.toFixed(2)}" title="${c} build(s) au niveau ${lab(k)}">${c||""}</td>`; }).join("")}</tr>`;
+    }).join("")}</tbody></table></div>`;
+}
+
 function renderTabs(){
   $("#tabs").innerHTML = DATA.heroOrder.map(h => {
     const ok = !!DATA.heroes[h];
@@ -155,9 +180,9 @@ function render(){
     ${encs.map(e=>`<button class="chip" type="button" data-e="${e}" aria-pressed="${enc===e}">${esc(DATA.encounters[e])}<span>${H.byEncounter[e].n}</span></button>`).join("")}
   </div>
   <div class="grid">
-    <section class="panel">
+    <section class="panel full">
       <h2>Talents</h2>
-      ${bars(A.talents)}
+      <div class="cols2">${bars(A.talents)}</div>
       <h3>Combinaisons complètes les plus jouées</h3>${combos(A.talentCombos)}
       <p class="note">En vert : talent pris par au moins la moitié des joueurs.</p>
     </section>
@@ -183,12 +208,18 @@ function render(){
     </section>
 
     <section class="panel">
-      <h2>Cou</h2>
-      ${bars(A.neck)}
-      <h3>Combinaisons</h3>${combos(A.neckCombos)}
+      <h2>Traits (arme + objets)</h2>
+      ${heatTable(A.traits,"Trait")}
+      <p class="note">Colonnes : rang total du trait sur l'équipement, et nombre de builds à ce rang. « arme » : trait actif uniquement via l'arbre de l'arme. Médiane calculée sur les builds qui portent le trait.</p>
     </section>
 
-    <section class="panel full">
+    <section class="panel">
+      <h2>Bénédictions</h2>
+      ${heatTable(A.blessings,"Bénédiction")}
+      <p class="note">Colonnes : niveau total de la bénédiction sur l'équipement, et nombre de builds à ce niveau.</p>
+    </section>
+
+    <section class="panel">
       <h2>Objets par emplacement</h2>
       <div class="scroll"><table class="slots"><tbody>${A.slots.map(s=>`<tr><td>${s.slot}</td><td>${
         s.items.map(i=>`<span class="it${i.pct>=50?" maj":""}">${esc(i.name)}<span class="p">${P(i.pct)}</span></span>`).join("")}</td></tr>`).join("")}</tbody></table></div>
@@ -204,22 +235,15 @@ function render(){
     </section>
 
     <section class="panel">
-      <h2>Traits (arme + objets)</h2>
-      ${A.traits.length?`<div class="scroll"><table><thead><tr><th>Trait</th><th class="n">Builds</th><th class="n">Rang médian</th></tr></thead><tbody>${
-        A.traits.map(t=>`<tr><td${t.pct>=50?' style="font-weight:600"':''}>${esc(t.name)}</td><td class="n">${P(t.pct)}</td><td class="n">${t.median==null?"<small>arme</small>":fr(t.median,t.median%1?1:0)}</td></tr>`).join("")}</tbody></table></div>`:'<p class="empty">Aucune donnée.</p>'}
-      <p class="note">Rang = somme des rangs du trait sur l'équipement. « arme » : trait actif uniquement via l'arbre de l'arme.</p>
+      <h2>Cou</h2>
+      ${bars(A.neck)}
+      <h3>Combinaisons</h3>${combos(A.neckCombos)}
     </section>
 
     <section class="panel">
       <h2>Enchantements</h2>
       ${levelTable(A.enchants,"Might / Guille / Cunning")}
       <p class="note">Total = somme des rangs sur tout l'équipement. Zone courante = la moitié des joueurs.</p>
-    </section>
-
-    <section class="panel">
-      <h2>Bénédictions</h2>
-      ${levelTable(A.blessings,"Bénédiction")}
-      <p class="note">Total = somme des niveaux sur tout l'équipement.</p>
     </section>
   </div>`;
 }
