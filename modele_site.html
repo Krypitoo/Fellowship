@@ -1,0 +1,248 @@
+<title>Builds Fellowship</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : barre de heros collante, puis une fiche par heros en grille de panneaux (2 colonnes, 1 sur mobile) */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#1b2430; --mute:#5d6878; --line:#d5dbe3;
+  --accent:#2f6690; --accent-soft:#dbe7f1; --core:#1f7a52; --legend:#c46a12;
+  --track:#e3e8ee;
+  --display:"Cinzel", "Trajan Pro", Georgia, serif;
+  --body:"IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161d; --panel:#18202a; --ink:#e6ebf1; --mute:#93a0b1; --line:#2a3542;
+  --accent:#6fa8d6; --accent-soft:#1f3346; --core:#4cc28a; --legend:#f0a050; --track:#243040; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161d; --panel:#18202a; --ink:#e6ebf1; --mute:#93a0b1; --line:#2a3542;
+  --accent:#6fa8d6; --accent-soft:#1f3346; --core:#4cc28a; --legend:#f0a050; --track:#243040; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.brand{font:700 15px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;min-width:0;flex:1}
+.tab{font:500 14px var(--body);color:var(--ink);background:none;border:1px solid transparent;border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.tab:hover{background:var(--accent-soft)}
+.tab[aria-current="true"]{background:var(--accent);color:var(--panel)}
+.tab:disabled{color:var(--mute);opacity:.55;cursor:default;background:none}
+.tab:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:24px 48px}
+.hero-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;margin-bottom:16px}
+h1{font:700 clamp(30px,5vw,44px)/1.05 var(--display);margin:0;letter-spacing:.02em;text-wrap:balance}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--mute);font-size:14px}
+.meta b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 20px}
+.chip{font:13px var(--body);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
+.chip span{color:var(--mute);font-family:var(--mono);font-size:12px;margin-left:4px}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-width:0}
+.panel.full{grid-column:1/-1}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+h2{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 12px}
+h3{font:600 13px var(--body);margin:16px 0 6px;color:var(--mute)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 34% 52px;gap:10px;align-items:center;padding:3px 0}
+.row .lab{overflow-wrap:anywhere}
+.row.core .lab{font-weight:600}
+.row .v{text-align:right;font:13px var(--mono);font-variant-numeric:tabular-nums}
+.track{height:8px;background:var(--track);border-radius:4px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:4px}
+.row.core .fill{background:var(--core)}
+.tag{display:inline-block;font:600 10px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--core);border:1px solid currentColor;border-radius:3px;padding:2px 4px;margin-left:6px;vertical-align:2px}
+.prio{font:500 15px var(--body);margin:0 0 12px}
+.prio b{font-weight:600}
+.prio .gt{color:var(--mute);margin:0 6px}
+.statrow{display:grid;grid-template-columns:90px minmax(0,1fr) 120px;gap:10px;align-items:center;padding:5px 0}
+.range{position:relative;height:10px;background:var(--track);border-radius:5px}
+.range .iqr{position:absolute;top:0;bottom:0;background:var(--accent-soft);border:1px solid var(--accent);border-radius:5px}
+.range .med{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1px;background:var(--accent);border-radius:2px}
+.statrow .v{text-align:right;font:13px var(--mono)}
+.statrow .v small{color:var(--mute)}
+dl.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;margin:12px 0 0;font-size:14px}
+dl.kv dt{color:var(--mute)} dl.kv dd{margin:0;text-align:right;font-family:var(--mono)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:0;border:1px solid var(--line)}
+.combos{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink)}
+.combos li{margin:4px 0}
+.combos .p{font-family:var(--mono);color:var(--mute);margin-right:6px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font:600 11px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+td.n,th.n{text-align:right;font-family:var(--mono);white-space:nowrap}
+td.n small{color:var(--mute)}
+.slots td:first-child{font-weight:600;white-space:nowrap;width:1%}
+.it{display:inline-block;margin:0 14px 2px 0}
+.it .p{font:12px var(--mono);color:var(--mute);margin-left:4px}
+.it.maj{color:var(--core);font-weight:600}
+.it.leg{color:var(--legend)}
+.note{color:var(--mute);font-size:12.5px;margin:8px 0 0}
+.empty{color:var(--mute);font-size:14px;margin:0}
+footer{color:var(--mute);font-size:13px;padding-block:0 32px}
+@media (max-width:480px){.statrow{grid-template-columns:72px minmax(0,1fr) 92px}.row{grid-template-columns:minmax(0,1fr) 28% 46px}}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .35s ease}}
+</style>
+
+<header class="bar"><div class="wrap">
+  <div class="brand">Builds Fellowship</div>
+  <nav class="tabs" id="tabs" aria-label="Héros"></nav>
+</div></header>
+<main class="wrap" id="app"></main>
+<footer class="wrap" id="foot"></footer>
+
+<script>
+const DATA = /*__DATA__*/null;
+const GEM = {Sapphire:["Saphir","#2f7fd6"],Emerald:["Émeraude","#1f9a5a"],Ruby:["Rubis","#b5194a"],
+             Diamond:["Diamant","#c9ced6"],Topaz:["Topaze","#e3b23c"],Amethyst:["Améthyste","#c04fbf"]};
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fr = (x, d=0) => x==null ? "–" : Number(x).toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const P = p => fr(p) + " %";
+let hero = null, enc = "all";
+
+function bars(list, opts={}){
+  if(!list.length) return '<p class="empty">Aucune donnée.</p>';
+  return list.map(x => {
+    const core = x.pct >= 50 && opts.core !== false;
+    return `<div class="row${core?" core":""}"><div class="lab">${esc(x.name)}${opts.extra?opts.extra(x):""}</div>
+      <div class="track"><div class="fill" style="width:${x.pct}%"></div></div><div class="v">${P(x.pct)}</div></div>`;
+  }).join("");
+}
+function combos(list){
+  return `<ol class="combos">${list.map(c=>`<li><span class="p">${P(c.pct)}</span>${esc(c.names.join(" · "))}</li>`).join("")}</ol>`;
+}
+function levelTable(list, head){
+  if(!list.length) return '<p class="empty">Aucune donnée.</p>';
+  return `<div class="scroll"><table><thead><tr><th>${head}</th><th class="n">Builds</th><th class="n">Total médian</th><th class="n">Zone courante</th></tr></thead><tbody>${
+    list.map(x=>`<tr><td${x.pct>=50?' style="font-weight:600"':''}>${esc(x.name)}</td><td class="n">${P(x.pct)}</td><td class="n">${fr(x.median,x.median%1?1:0)}</td><td class="n"><small>${fr(x.q1)} – ${fr(x.q3)}</small></td></tr>`).join("")
+  }</tbody></table></div>`;
+}
+
+function renderTabs(){
+  $("#tabs").innerHTML = DATA.heroOrder.map(h => {
+    const ok = !!DATA.heroes[h];
+    return `<button class="tab" type="button" data-h="${esc(h)}" ${ok?"":"disabled title=\"Pas encore de données\""} aria-current="${h===hero}">${esc(h)}</button>`;
+  }).join("");
+}
+
+function render(){
+  const H = DATA.heroes[hero];
+  const A = enc === "all" ? H.all : H.byEncounter[enc];
+  const encs = Object.keys(H.byEncounter);
+  const sec = A.secondary;
+  const maxPct = Math.max(...sec.map(s=>s.max||0), 1);
+  const scale = v => Math.min(100, 100 * v / (maxPct * 1.05));
+  const gmax = Math.max(...A.gemPower.map(g=>g.q3||g.median||0), 1);
+  const encLabel = enc==="all" ? `${encs.length} donjon${encs.length>1?"s":""}` : esc(DATA.encounters[enc]);
+
+  $("#app").innerHTML = `
+  <div class="hero-head">
+    <h1>${esc(hero)}</h1>
+    <div class="meta">
+      <span><b>${A.n}</b> builds</span>
+      <span>${encLabel}</span>
+      ${A.key?`<span>Clés <b>+${A.key[0]}</b> à <b>+${A.key[2]}</b> (médiane +${fr(A.key[1])})</span>`:""}
+      ${A.score?`<span>Score <b>${fr(A.score[0])}</b> – <b>${fr(A.score[2])}</b></span>`:""}
+    </div>
+  </div>
+  <div class="filters" role="group" aria-label="Donjon">
+    <button class="chip" type="button" data-e="all" aria-pressed="${enc==="all"}">Tous les donjons<span>${H.all.n}</span></button>
+    ${encs.map(e=>`<button class="chip" type="button" data-e="${e}" aria-pressed="${enc===e}">${esc(DATA.encounters[e])}<span>${H.byEncounter[e].n}</span></button>`).join("")}
+  </div>
+  <div class="grid">
+    <section class="panel">
+      <h2>Talents</h2>
+      ${bars(A.talents)}
+      <h3>Combinaisons complètes les plus jouées</h3>${combos(A.talentCombos)}
+      <p class="note">En vert : talent pris par au moins la moitié des joueurs.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Stats secondaires</h2>
+      <p class="prio">${sec.map(s=>`<b>${s.label}</b>`).join('<span class="gt">&gt;</span>')}</p>
+      ${sec.map(s=>`<div class="statrow"><div>${s.label}</div>
+        <div class="range" title="50 % des joueurs entre ${fr(s.q1,1)} et ${fr(s.q3,1)} %">
+          <div class="iqr" style="left:${scale(s.q1)}%;width:${Math.max(scale(s.q3)-scale(s.q1),1)}%"></div>
+          <div class="med" style="left:${scale(s.pct)}%"></div></div>
+        <div class="v">${fr(s.pct,1)} % <small>(${fr(s.raw)})</small></div></div>`).join("")}
+      <p class="note">Trait plein : médiane. Zone claire : la moitié des joueurs. Entre parenthèses : valeur de stat brute.</p>
+      <dl class="kv">${A.otherStats.map(o=>`<dt>${o.label}</dt><dd>${fr(o.median, o.median%1&&o.median<1000?1:0)}</dd>`).join("")}</dl>
+    </section>
+
+    <section class="panel">
+      <h2>Gemmes</h2>
+      ${A.gemPower.map(g=>`<div class="row"><div class="lab"><span class="dot" style="background:${GEM[g.key][1]}"></span>${GEM[g.key][0]}</div>
+        <div class="track"><div class="fill" style="width:${100*g.median/gmax}%;background:${GEM[g.key][1]}"></div></div><div class="v">${fr(g.median)}</div></div>`).join("")}
+      <p class="note">Puissance totale de gemmes par couleur (médiane).</p>
+      <h3>Gemmes serties</h3>${bars(A.gems,{core:false})}
+    </section>
+
+    <section class="panel">
+      <h2>Cou</h2>
+      ${bars(A.neck)}
+      <h3>Combinaisons</h3>${combos(A.neckCombos)}
+    </section>
+
+    <section class="panel full">
+      <h2>Objets par emplacement</h2>
+      <div class="scroll"><table class="slots"><tbody>${A.slots.map(s=>`<tr><td>${s.slot}</td><td>${
+        s.items.map(i=>`<span class="it${i.pct>=50?" maj":""}">${esc(i.name)}<span class="p">${P(i.pct)}</span></span>`).join("")}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note">Pourcentage de joueurs qui portent l'objet. En vert : objet incontournable (au moins 50 %).</p>
+    </section>
+
+    <section class="panel">
+      <h2>Légendaire</h2>
+      <p class="empty" style="margin-bottom:8px">${P(A.legendaryPct)} des joueurs portent un objet légendaire.</p>
+      ${A.legendary.length?A.legendary.map(l=>`<div class="row"><div class="lab"><span class="it leg" style="margin:0">${esc(l.name)}</span> <small style="color:var(--mute)">${l.slot}</small></div>
+        <div class="track"><div class="fill" style="width:${l.pct}%;background:var(--legend)"></div></div><div class="v">${P(l.pct)}</div></div>`).join(""):""}
+      ${A.special.length?`<h3>Effets spéciaux</h3>${bars(A.special,{core:false})}`:""}
+    </section>
+
+    <section class="panel">
+      <h2>Traits (arme + objets)</h2>
+      ${A.traits.length?`<div class="scroll"><table><thead><tr><th>Trait</th><th class="n">Builds</th><th class="n">Rang médian</th></tr></thead><tbody>${
+        A.traits.map(t=>`<tr><td${t.pct>=50?' style="font-weight:600"':''}>${esc(t.name)}</td><td class="n">${P(t.pct)}</td><td class="n">${t.median==null?"<small>arme</small>":fr(t.median,t.median%1?1:0)}</td></tr>`).join("")}</tbody></table></div>`:'<p class="empty">Aucune donnée.</p>'}
+      <p class="note">Rang = somme des rangs du trait sur l'équipement. « arme » : trait actif uniquement via l'arbre de l'arme.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Enchantements</h2>
+      ${levelTable(A.enchants,"Might / Guille / Cunning")}
+      <p class="note">Total = somme des rangs sur tout l'équipement. Zone courante = la moitié des joueurs.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Bénédictions</h2>
+      ${levelTable(A.blessings,"Bénédiction")}
+      <p class="note">Total = somme des niveaux sur tout l'équipement.</p>
+    </section>
+  </div>`;
+}
+
+function select(h){
+  if(!DATA.heroes[h]) h = DATA.heroOrder.find(x=>DATA.heroes[x]);
+  if(h !== hero) enc = "all";
+  hero = h;
+  try{ localStorage.setItem("hero", h); }catch(e){}
+  renderTabs(); render();
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest(".tab"); if(t && !t.disabled){ location.hash = t.dataset.h; return; }
+  const c = e.target.closest(".chip"); if(c){ enc = c.dataset.e; render(); }
+});
+window.addEventListener("hashchange", () => select(decodeURIComponent(location.hash.slice(1))));
+
+(function init(){
+  const d = new Date(DATA.generated);
+  $("#foot").innerHTML = `Mis à jour le ${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})} · Données : classements Fellowship Logs (top 30 par héros et par donjon), médianes sans pondération.`;
+  let start = decodeURIComponent(location.hash.slice(1));
+  if(!DATA.heroes[start]){ try{ start = localStorage.getItem("hero") || ""; }catch(e){ start = ""; } }
+  select(start || "Helena");
+})();
+</script>
