@@ -88,6 +88,57 @@ td.n small{color:var(--mute)}
 .it.leg{color:var(--legend)}
 .note{color:var(--mute);font-size:12.5px;margin:8px 0 0}
 .empty{color:var(--mute);font-size:14px;margin:0}
+.modes{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.mode{font:500 13.5px var(--body);border:0;background:none;color:var(--ink);padding:7px 14px;cursor:pointer}
+.mode+.mode{border-left:1px solid var(--line)}
+.mode[aria-selected="true"]{background:var(--accent);color:var(--panel)}
+.mode:focus-visible,.btn:focus-visible,.pick:focus-visible,.opt:focus-visible,.tiers button:focus-visible,.step button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.planbar{margin-bottom:16px;display:grid;gap:10px}
+.pb-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.pb-row label{font:600 12px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#buildSel,#buildName,.pb-box textarea,.pstat input[type=number]{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+#buildSel{min-width:160px} #buildName{flex:1;min-width:160px;max-width:320px}
+.btn{font:500 13px var(--body);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:6px 11px;cursor:pointer}
+.btn:hover{border-color:var(--accent)} .btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.btn.danger{color:#b3261e;border-color:color-mix(in srgb,#b3261e 40%,var(--line))}
+.pb-box{display:grid;gap:6px} .pb-box label{font-size:13px;color:var(--mute)} .pb-box textarea{width:100%;font:12px var(--mono);resize:vertical} .pb-box .btn{justify-self:start}
+.pb-msg{margin:0;font-size:13.5px;color:var(--core);font-weight:600}
+.saved{font:12px var(--mono);color:var(--core);opacity:0;transition:opacity .2s} .saved.on{opacity:1}
+.h2x{font:500 12px var(--mono);letter-spacing:0;text-transform:none;color:var(--ink);margin-left:8px}
+.pick{font:inherit;color:inherit;text-align:left;cursor:pointer;background:var(--panel);--h:0}
+.pick:hover{border-color:var(--accent)}
+.pick.sel{border:2px solid var(--accent);background:var(--accent-soft);padding:7px}
+.pick.sel .nm{font-weight:600} .pick .cnt b{color:var(--accent);font-weight:600}
+.pick:not(.sel) .ic img{filter:grayscale(.7);opacity:.75}
+.pstat{display:grid;grid-template-columns:80px minmax(0,1fr) 70px;gap:4px 10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.pstat input[type=range]{width:100%;accent-color:var(--accent)}
+.pstat input[type=number]{width:70px;font-family:var(--mono);text-align:right}
+.pstat .ref{grid-column:2/-1;font:12px var(--mono);color:var(--mute)}
+.pgem{display:grid;grid-template-columns:100px minmax(0,1fr);gap:10px;align-items:center;padding:5px 0}
+.tiers{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.tiers button{flex:1;font:12px var(--mono);border:0;background:var(--panel);color:var(--ink);padding:6px 2px;cursor:pointer;position:relative}
+.tiers button+button{border-left:1px solid var(--line)}
+.tiers button[aria-pressed="true"]{background:var(--c);color:#fff;font-weight:600}
+.tiers button[data-i="0"][aria-pressed="true"]{background:var(--mute)}
+.tiers button[data-k="Diamond"][aria-pressed="true"]:not([data-i="0"]),.tiers button[data-k="Topaz"][aria-pressed="true"]:not([data-i="0"]){color:#1b2430}
+.tiers button i{font-style:normal;font-size:10px;margin-left:3px;color:var(--legend)}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.prow:not(.on) .pn{color:var(--mute)} .prow.on .pn{font-weight:600}
+.prow .ref{grid-row:2;font:11.5px var(--mono);color:var(--mute);padding-left:37px}
+.prow .step{grid-row:1/3;grid-column:2}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.step button{width:30px;height:30px;border:0;background:var(--panel);color:var(--ink);font:600 16px var(--body);cursor:pointer}
+.step button:hover{background:var(--accent-soft)}
+.step b{min-width:30px;text-align:center;font:600 14px var(--mono)}
+.prow.on .step{border-color:var(--accent)}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{font:13.5px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.opt small{color:var(--mute);font-family:var(--mono)}
+.opt.sel{border:2px solid var(--accent);background:var(--accent-soft);padding:4px 9px;font-weight:600}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt .ic{margin-right:0}
+@media (max-width:480px){.pgem{grid-template-columns:1fr}.pstat{grid-template-columns:70px minmax(0,1fr) 64px}}
 .grow,.gtl{display:grid;grid-template-columns:100px minmax(0,1fr) 52px;gap:10px;align-items:center;padding:4px 0}
 .grow .v{text-align:right;font:600 13px var(--mono)}
 .stack{display:flex;height:22px;border-radius:4px;overflow:hidden;background:var(--track)}
@@ -277,6 +328,7 @@ function renderTabs(){
 }
 
 function render(){
+  if(mode === "plan") return renderPlan();
   const H = DATA.heroes[hero];
   const A = enc === "all" ? H.all : H.byEncounter[enc];
   const encs = Object.keys(H.byEncounter);
@@ -287,7 +339,7 @@ function render(){
 
   $("#app").innerHTML = `
   <div class="hero-head">
-    <h1>${esc(hero)}</h1>
+    <h1>${esc(hero)}</h1>${modeSwitch()}
     <div class="meta">
       <span><b>${A.n}</b> builds</span>
       <span>${encLabel}</span>
@@ -383,9 +435,205 @@ function render(){
   </div>`;
 }
 
+// ======================= Mode « Mon build » (objectifs) =======================
+// Sauvegarde dans ce navigateur uniquement (localStorage), avec export / import par code.
+const STORE_KEY = "fellowship-objectifs-v1";
+const STAT_KEYS = ["Crit","Expertise","Haste","Spirit"];
+const STAT_FR = {Crit:"Critique",Expertise:"Expertise",Haste:"Hâte",Spirit:"Esprit"};
+let mode = "stats";
+let planUi = {exp:false, imp:false, del:false, msg:""};
+
+function loadStore(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; } }
+let STORE = loadStore();
+function saveStore(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); flash("Enregistré"); }
+  catch(e){ flash("Sauvegarde impossible dans ce navigateur (navigation privée ?)"); }
+}
+let flashT;
+function flash(txt){
+  const el = document.getElementById("saved"); if(!el) return;
+  el.textContent = txt; el.classList.add("on"); clearTimeout(flashT); flashT = setTimeout(()=>el.classList.remove("on"), 1400);
+}
+const newId = () => "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+function emptyBuild(name){
+  return {name, talents:[], stats:{}, gems:{}, neck:[], legendary:"", special:"", aspects:{}, sigils:{}, blessings:{}};
+}
+function topBuild(name){
+  const A = DATA.heroes[hero].all, b = emptyBuild(name);
+  b.talents = talentList(A).filter(t=>t.pct>=50).map(t=>t.name);
+  A.secondary.forEach(s=>{ b.stats[s.key] = Math.round(s.raw); });
+  if(A.gemTiers) for(const k of GEM_ORDER){ const tr=A.gemTiers[k]; if(tr) b.gems[k] = tr.indexOf(Math.max(...tr)); }
+  b.neck = A.neck.slice(0,3).map(x=>x.name);
+  b.legendary = A.legendary[0] ? A.legendary[0].name : "";
+  b.special = A.special[0] ? A.special[0].name : "";
+  for(const t of A.traits) if(t.pct>=50) (isAspect(t.name)?b.aspects:b.sigils)[t.name] = Math.max(1, Math.round(t.median||1));
+  for(const x of A.blessings) if(x.pct>=50) b.blessings[x.name] = Math.max(1, Math.round(x.median||1));
+  return b;
+}
+function heroStore(){
+  if(!STORE[hero] || !STORE[hero].builds || !Object.keys(STORE[hero].builds).length){
+    const id = newId(); STORE[hero] = {cur:id, builds:{[id]: topBuild("Mon build")}};
+  }
+  const S = STORE[hero];
+  if(!S.builds[S.cur]) S.cur = Object.keys(S.builds)[0];
+  return S;
+}
+const curBuild = () => { const S = heroStore(); return S.builds[S.cur]; };
+
+function modeSwitch(){
+  return `<div class="modes" role="tablist" aria-label="Affichage">
+    <button type="button" class="mode" data-mode="stats" aria-selected="${mode==="stats"}">Analyse du top 30</button>
+    <button type="button" class="mode" data-mode="plan" aria-selected="${mode==="plan"}">Mon build objectif</button></div>`;
+}
+function stepper(group, name, val, ref){
+  return `<div class="prow${val>0?" on":""}"><span class="nmc">${ic(name)}<span class="pn">${esc(name)}</span></span>
+    <span class="ref">${ref}</span>
+    <span class="step"><button type="button" data-act="dec" data-g="${group}" data-n="${esc(name)}" aria-label="Moins">−</button><b>${val||"–"}</b><button type="button" data-act="inc" data-g="${group}" data-n="${esc(name)}" aria-label="Plus">+</button></span></div>`;
+}
+function listWith(base, chosen){ const names = base.map(x=>x.name); return names.concat(Object.keys(chosen).filter(n=>!names.includes(n))); }
+
+function renderPlan(){
+  const S = heroStore(), B = S.builds[S.cur], A = DATA.heroes[hero].all;
+  const tl = talentList(A), byName = Object.fromEntries(tl.map(t=>[t.name,t]));
+  const chosenT = tl.filter(t=>B.talents.includes(t.name));
+  const cost = chosenT.reduce((s,t)=>s+(t.cost||0),0);
+  const refT = n => { const t=A.traits.find(x=>x.name===n); return t?`top 30 : ${P(t.pct)} · rang ${fr(t.median,t.median%1?1:0)}`:"peu joué"; };
+  const refB = n => { const t=A.blessings.find(x=>x.name===n); return t?`top 30 : ${P(t.pct)} · niv. ${fr(t.median,t.median%1?1:0)}`:"peu joué"; };
+  const traitNames = listWith(A.traits, Object.assign({}, B.aspects, B.sigils));
+  const asp = traitNames.filter(isAspect), sig = traitNames.filter(n=>!isAspect(n));
+  const code = planUi.exp ? btoa(unescape(encodeURIComponent(JSON.stringify({v:1, hero, build:B})))) : "";
+
+  $("#app").innerHTML = `
+  <div class="hero-head"><h1>${esc(hero)}</h1>${modeSwitch()}</div>
+  <section class="panel full planbar">
+    <div class="pb-row">
+      <label for="buildSel">Build</label>
+      <select id="buildSel">${Object.entries(S.builds).map(([id,b])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(b.name)}</option>`).join("")}</select>
+      <label for="buildName" class="sr">Nom du build</label>
+      <input id="buildName" type="text" maxlength="40" value="${esc(B.name)}" aria-label="Nom du build">
+      <span id="saved" class="saved" aria-live="polite"></span>
+    </div>
+    <div class="pb-row actions">
+      <button type="button" class="btn" data-act="new-top">Nouveau d'après le top 30</button>
+      <button type="button" class="btn" data-act="new-empty">Nouveau vide</button>
+      <button type="button" class="btn" data-act="dup">Dupliquer</button>
+      <button type="button" class="btn" data-act="exp" aria-pressed="${planUi.exp}">Exporter</button>
+      <button type="button" class="btn" data-act="imp" aria-pressed="${planUi.imp}">Importer</button>
+      <button type="button" class="btn danger" data-act="del">${planUi.del?"Confirmer la suppression":"Supprimer"}</button>
+      ${planUi.del?`<button type="button" class="btn" data-act="del-no">Annuler</button>`:""}
+    </div>
+    ${planUi.exp?`<div class="pb-box"><label for="expCode">Code du build « ${esc(B.name)} » : copie-le pour l'ouvrir sur un autre appareil ou le partager.</label>
+      <textarea id="expCode" readonly rows="3">${code}</textarea><button type="button" class="btn" data-act="copy">Copier le code</button></div>`:""}
+    ${planUi.imp?`<div class="pb-box"><label for="impCode">Colle un code de build exporté :</label>
+      <textarea id="impCode" rows="3" placeholder="Code du build"></textarea><button type="button" class="btn" data-act="imp-go">Importer ce build</button></div>`:""}
+    ${planUi.msg?`<p class="pb-msg">${esc(planUi.msg)}</p>`:""}
+    <p class="note">Tes builds sont enregistrés automatiquement dans ce navigateur, sur cet appareil. Pour les retrouver ailleurs, utilise Exporter puis Importer.</p>
+  </section>
+  <div class="grid">
+    <section class="panel full">
+      <h2>Talents <span class="h2x">${chosenT.length} choisi${chosenT.length>1?"s":""} · coût total ${cost}</span></h2>
+      <div class="tgrid${TALENT_LAYOUT[hero]?" game":""}">${tl.map(t=>{const on=B.talents.includes(t.name);return `<button type="button" class="tile pick${on?" sel":""}" data-act="tal" data-n="${esc(t.name)}" aria-pressed="${on}">
+        <div class="icw">${ic(t.name,"lg")}<span class="badge">${fr(t.pct)} %</span></div>
+        <div class="tx"><div class="nm">${esc(t.name)}</div><div class="cnt">${t.cost?`coût ${t.cost} · `:""}${on?"<b>choisi</b>":"cliquer pour choisir"}</div></div></button>`}).join("")}</div>
+      <p class="note">Clique sur un talent pour l'ajouter ou le retirer. Le pourcentage rappelle la part du top 30 qui le prend.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Stats secondaires visées</h2>
+      ${STAT_KEYS.map(k=>{const s=A.secondary.find(x=>x.key===k); const v=B.stats[k]??0; return `<div class="pstat">
+        <label for="st-${k}">${STAT_FR[k]}</label>
+        <input type="range" id="st-${k}" min="0" max="${STAT_MAX}" step="1" value="${v}" data-stat="${k}">
+        <input type="number" id="stn-${k}" min="0" max="999" step="1" value="${v}" data-stat="${k}" aria-label="${STAT_FR[k]} (valeur)">
+        <span class="ref">${s?`top 30 : ${fr(s.raw)} (${fr(s.q1)} – ${fr(s.q3)})`:""}</span></div>`}).join("")}
+      <p class="note">Valeurs brutes. Entre parenthèses : la zone où se trouve la moitié du top 30.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Paliers de gemmes visés</h2>
+      ${GEM_ORDER.map(k=>{const tr=A.gemTiers?A.gemTiers[k]:null; const v=B.gems[k]??0; const top=tr?tr.indexOf(Math.max(...tr)):-1; return `<div class="pgem">
+        <span class="lab"><span class="dot" style="background:${GEM[k][1]}"></span>${GEM[k][0]}</span>
+        <span class="tiers" role="group" aria-label="${GEM[k][0]}">${TIER_LAB.map((l,i)=>`<button type="button" data-act="gem" data-k="${k}" data-i="${i}" aria-pressed="${v===i}" style="--c:${GEM[k][1]}">${l}${i===top?"<i>★</i>":""}</button>`).join("")}</span></div>`}).join("")}
+      <p class="note">★ : palier le plus fréquent dans le top 30.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Aspects visés</h2>
+      ${asp.map(n=>stepper("aspects",n,B.aspects[n]||0,refT(n))).join("")||'<p class="empty">Aucune donnée.</p>'}
+    </section>
+    <section class="panel">
+      <h2>Sigils visés</h2>
+      ${sig.map(n=>stepper("sigils",n,B.sigils[n]||0,refT(n))).join("")||'<p class="empty">Aucune donnée.</p>'}
+    </section>
+
+    <section class="panel">
+      <h2>Bénédictions visées</h2>
+      ${listWith(A.blessings,B.blessings).map(n=>stepper("blessings",n,B.blessings[n]||0,refB(n))).join("")}
+      <p class="note">Rang ou niveau total visé sur l'équipement. « – » : non pris.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Légendaire</h2>
+      <div class="opts">${A.legendary.map(l=>`<button type="button" class="opt${B.legendary===l.name?" sel":""}" data-act="leg" data-n="${esc(l.name)}" aria-pressed="${B.legendary===l.name}"><span class="it leg" style="margin:0">${esc(l.name)}</span> <small>${l.slot} · ${P(l.pct)}</small></button>`).join("")}</div>
+      ${A.special.length?`<h3>Effet spécial</h3><div class="opts">${A.special.map(s=>`<button type="button" class="opt${B.special===s.name?" sel":""}" data-act="spe" data-n="${esc(s.name)}" aria-pressed="${B.special===s.name}">${esc(s.name)} <small>${P(s.pct)}</small></button>`).join("")}</div>`:""}
+      <h3>Cou <span class="h2x">${B.neck.length} / 3</span></h3>
+      <div class="opts">${A.neck.map(x=>{const on=B.neck.includes(x.name);return `<button type="button" class="opt${on?" sel":""}" data-act="neck" data-n="${esc(x.name)}" aria-pressed="${on}" ${!on&&B.neck.length>=3?"disabled":""}><span class="nmc">${ic(x.name)}${esc(x.name)}</span> <small>${P(x.pct)}</small></button>`}).join("")}</div>
+    </section>
+  </div>`;
+}
+
+function planClick(t){
+  const S = heroStore(), B = S.builds[S.cur], act = t.dataset.act, n = t.dataset.n;
+  planUi.msg = "";
+  if(act!=="del") planUi.del = false;
+  switch(act){
+    case "tal": B.talents = B.talents.includes(n) ? B.talents.filter(x=>x!==n) : B.talents.concat(n); break;
+    case "gem": B.gems[t.dataset.k] = +t.dataset.i; break;
+    case "inc": case "dec": { const g = B[t.dataset.g]; const v = Math.max(0, Math.min(8, (g[n]||0) + (act==="inc"?1:-1))); if(v) g[n]=v; else delete g[n]; break; }
+    case "leg": B.legendary = B.legendary===n ? "" : n; break;
+    case "spe": B.special = B.special===n ? "" : n; break;
+    case "neck": B.neck = B.neck.includes(n) ? B.neck.filter(x=>x!==n) : (B.neck.length<3 ? B.neck.concat(n) : B.neck); break;
+    case "new-top": case "new-empty": { const id=newId(); const k=Object.keys(S.builds).length+1;
+      S.builds[id] = act==="new-top" ? topBuild(`Build ${k}`) : emptyBuild(`Build ${k}`); S.cur=id; break; }
+    case "dup": { const id=newId(); S.builds[id] = JSON.parse(JSON.stringify(B)); S.builds[id].name = (B.name+" (copie)").slice(0,40); S.cur=id; break; }
+    case "del":
+      if(!planUi.del){ planUi.del = true; renderPlan(); return; }
+      delete S.builds[S.cur]; planUi.del = false; S.cur = Object.keys(S.builds)[0]; heroStore(); break;
+    case "del-no": planUi.del = false; renderPlan(); return;
+    case "exp": planUi.exp = !planUi.exp; planUi.imp = false; renderPlan(); return;
+    case "imp": planUi.imp = !planUi.imp; planUi.exp = false; renderPlan(); return;
+    case "copy": { const ta=$("#expCode"); const done=()=>flash("Code copié");
+      if(navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, ()=>{ ta.select(); flash("Sélectionné : Ctrl+C pour copier"); });
+      else { ta.select(); flash("Sélectionné : Ctrl+C pour copier"); } return; }
+    case "imp-go": {
+      let o; try{ o = JSON.parse(decodeURIComponent(escape(atob($("#impCode").value.trim())))); }catch(e){ o = null; }
+      if(!o || !o.build || !o.hero || !DATA.heroes[o.hero]){ planUi.msg = "Code non reconnu : vérifie que tu as copié le code en entier."; renderPlan(); return; }
+      const b = Object.assign(emptyBuild("Build importé"), o.build);
+      if(o.hero !== hero){ hero = o.hero; }
+      const S2 = heroStore(); const id = newId(); S2.builds[id] = b; S2.cur = id; planUi.imp = false;
+      planUi.msg = `Build « ${b.name} » importé pour ${o.hero}.`; saveStore();
+      if(location.hash.slice(1) !== hero) location.hash = hero; else { renderTabs(); renderPlan(); }
+      return; }
+    default: return;
+  }
+  saveStore(); renderPlan();
+}
+
+document.addEventListener("input", e => {
+  if(mode !== "plan") return;
+  const t = e.target;
+  if(t.id === "buildName"){ const B = curBuild(); B.name = t.value.trim() || "Sans nom";
+    const o = document.querySelector(`#buildSel option[value="${STORE[hero].cur}"]`); if(o) o.textContent = B.name; saveStore(); return; }
+  if(t.dataset.stat){ const k = t.dataset.stat; const v = Math.max(0, Math.round(+t.value || 0)); curBuild().stats[k] = v;
+    const other = document.getElementById((t.type==="range"?"stn-":"st-")+k); if(other) other.value = v; saveStore(); }
+});
+document.addEventListener("change", e => {
+  if(mode === "plan" && e.target.id === "buildSel"){ heroStore().cur = e.target.value; planUi = {exp:false,imp:false,del:false,msg:""}; saveStore(); renderPlan(); }
+});
+
 function select(h){
   if(!DATA.heroes[h]) h = heroOrder().find(x=>DATA.heroes[x]);
-  if(h !== hero) enc = "all";
+  if(h !== hero){ enc = "all"; planUi = {exp:false,imp:false,del:false,msg:""}; }
   hero = h;
   try{ localStorage.setItem("hero", h); }catch(e){}
   renderTabs(); render();
@@ -393,6 +641,8 @@ function select(h){
 
 document.addEventListener("click", e => {
   const t = e.target.closest(".tab"); if(t && !t.disabled){ location.hash = t.dataset.h; return; }
+  const m = e.target.closest(".mode"); if(m){ mode = m.dataset.mode; try{ localStorage.setItem("mode", mode); }catch(err){} render(); return; }
+  if(mode === "plan"){ const a = e.target.closest("[data-act]"); if(a && !a.disabled) planClick(a); return; }
   const c = e.target.closest(".chip"); if(c){ enc = c.dataset.e; render(); }
 });
 window.addEventListener("hashchange", () => select(decodeURIComponent(location.hash.slice(1))));
@@ -400,6 +650,7 @@ window.addEventListener("hashchange", () => select(decodeURIComponent(location.h
 (function init(){
   const d = new Date(DATA.generated);
   $("#foot").innerHTML = `Mis à jour le ${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})} · Données : classements Fellowship Logs (top 30 par héros et par donjon), médianes sans pondération.`;
+  try{ mode = localStorage.getItem("mode") === "plan" ? "plan" : "stats"; }catch(e){}
   let start = decodeURIComponent(location.hash.slice(1));
   if(!DATA.heroes[start]){ try{ start = localStorage.getItem("hero") || ""; }catch(e){ start = ""; } }
   select(start || "Helena");
