@@ -85,6 +85,20 @@ td.n small{color:var(--mute)}
 .it.leg{color:var(--legend)}
 .note{color:var(--mute);font-size:12.5px;margin:8px 0 0}
 .empty{color:var(--mute);font-size:14px;margin:0}
+.grow,.gtl{display:grid;grid-template-columns:100px minmax(0,1fr) 52px;gap:10px;align-items:center;padding:4px 0}
+.grow .v{text-align:right;font:600 13px var(--mono)}
+.stack{display:flex;height:22px;border-radius:4px;overflow:hidden;background:var(--track)}
+.seg{display:grid;place-items:center;font:600 11px var(--mono);white-space:nowrap;overflow:hidden;color:var(--ink)}
+.seg.t0{background:var(--track);color:var(--mute)}
+.seg.t1{background:color-mix(in srgb,var(--c) 30%,var(--panel))}
+.seg.t2{background:color-mix(in srgb,var(--c) 62%,var(--panel))}
+.seg.t3{background:var(--c);color:#fff}
+.seg.t3.lt{color:#1b2430}
+.seg+.seg{box-shadow:inset 1px 0 0 var(--panel)}
+.gleg{display:flex;flex-wrap:wrap;gap:4px 14px;font:11px var(--mono);color:var(--mute)}
+.gleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;border:1px solid var(--line)}
+.gleg i.t0{background:var(--track)} .gleg i.t1{background:color-mix(in srgb,var(--mute) 30%,var(--panel))}
+.gleg i.t2{background:color-mix(in srgb,var(--mute) 62%,var(--panel))} .gleg i.t3{background:var(--mute)}
 .ic{position:relative;flex:none;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font:600 10px var(--body);text-transform:uppercase;overflow:hidden;margin-right:8px;vertical-align:middle;border:1px solid var(--line)}
 .ic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ic.lg{width:40px;height:40px;font-size:13px;margin:0}
@@ -145,6 +159,9 @@ let hero = null, enc = "all";
 // Adresse des icones du jeu (a completer) ; vide = initiales a la place des icones
 const ICON_BASE = "https://assets.fellows.gg/static/icons/";
 const STAT_MAX = 350;
+const GEM_ORDER = ["Sapphire","Emerald","Ruby","Diamond","Topaz","Amethyst"];
+const TIER_LAB = ["< 125","125","625","1500"];
+const LIGHT_GEMS = ["Diamond","Topaz"];   // couleurs claires : texte fonce
 const HERO_ORDER = ["Helena","Meiko","Xavian","Gunde","Tariq","Mara","Rime","Elarion","Ardeos","Sylvie","Vigour","Aeona"];
 const heroOrder = () => HERO_ORDER.concat(DATA.heroOrder.filter(h => !HERO_ORDER.includes(h)));
 // Aspects (le reste des traits a rang = sigils)
@@ -304,9 +321,15 @@ function render(){
 
     <section class="panel">
       <h2>Gemmes</h2>
-      ${A.gemPower.map(g=>`<div class="row"><div class="lab"><span class="dot" style="background:${GEM[g.key][1]}"></span>${GEM[g.key][0]}</div>
+      ${A.gemTiers?`<div class="gtl"><span></span><div class="gleg">${TIER_LAB.map((l,i)=>`<span><i class="t${i}"></i>${l}</span>`).join("")}</div></div>
+      ${GEM_ORDER.map(k=>{const tr=A.gemTiers[k]; if(!tr||!tr.slice(1).some(v=>v>0)) return ""; const top=tr.indexOf(Math.max(...tr));
+        return `<div class="grow"><div class="lab"><span class="dot" style="background:${GEM[k][1]}"></span>${GEM[k][0]}</div>
+        <div class="stack">${tr.map((v,i)=>v>0?`<div class="seg t${i}${LIGHT_GEMS.includes(k)?" lt":""}" style="width:${v}%;--c:${GEM[k][1]}" title="${TIER_LAB[i]} : ${fr(v)} % des joueurs">${v>=9?fr(v)+" %":""}</div>`:"").join("")}</div>
+        <div class="v">${TIER_LAB[top]}</div></div>`}).join("")}
+      <p class="note">Part des joueurs à chaque palier de puissance (moins de 125, 125, 625, 1500 et plus). À droite : le palier le plus fréquent.</p>`
+      :`${A.gemPower.map(g=>`<div class="row"><div class="lab"><span class="dot" style="background:${GEM[g.key][1]}"></span>${GEM[g.key][0]}</div>
         <div class="track"><div class="fill" style="width:${100*g.median/gmax}%;background:${GEM[g.key][1]}"></div></div><div class="v">${fr(g.median)}</div></div>`).join("")}
-      <p class="note">Puissance totale de gemmes par couleur (médiane).</p>
+      <p class="note">Puissance totale de gemmes par couleur (médiane).</p>`}
     </section>
 
     <section class="panel">

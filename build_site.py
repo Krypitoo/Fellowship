@@ -37,6 +37,7 @@ SECONDARY_FR = {"Crit": "Critique", "Haste": "Hâte", "Expertise": "Expertise", 
 MAIN_STATS = ["Strength", "Agility", "Intellect"]
 MAIN_FR = {"Strength": "Force", "Agility": "Agilité", "Intellect": "Intelligence"}
 GEM_KEYS = ["Sapphire", "Emerald", "Ruby", "Diamond", "Topaz", "Amethyst"]
+GEM_TIERS = [125, 625, 1500]   # paliers de puissance de gemmes
 
 
 def is_ench(name):
@@ -168,6 +169,15 @@ def aggregate(builds):
             gp.append({"key": k, "median": r1(med(vals)), "q1": r1(q1), "q3": r1(q3),
                        "pct": pct(sum(1 for v in vals if v > 0), n)})
     A["gemPower"] = gp
+    # Paliers de puissance de gemmes (0 / 125 / 625 / 1500) : part des builds a chaque palier
+    tiers = {}
+    for k in GEM_KEYS:
+        c = Counter()
+        for b in builds:
+            v = stat(b, k) or 0
+            c[sum(v >= s for s in GEM_TIERS)] += 1
+        tiers[k] = [pct(c[i], n) for i in range(len(GEM_TIERS) + 1)]
+    A["gemTiers"] = tiers
     gems = Counter()
     for b in builds:
         gems.update({g["gem"]["name"] for g in gear(b)
