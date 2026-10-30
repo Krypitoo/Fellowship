@@ -1,0 +1,272 @@
+{
+ "types_avec_description": {
+  "Guild": [
+   "attendance",
+   "competitionMode",
+   "description",
+   "faction",
+   "id",
+   "name",
+   "server",
+   "stealthMode",
+   "tags",
+   "members",
+   "currentUserRank",
+   "zoneRanking"
+  ]
+ },
+ "GameData": {
+  "GameAbility": [
+   [
+    "id",
+    []
+   ],
+   [
+    "icon",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameAchievement": [
+   [
+    "id",
+    []
+   ],
+   [
+    "icon",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameAffix": [
+   [
+    "id",
+    []
+   ],
+   [
+    "icon",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameClass": [
+   [
+    "id",
+    []
+   ],
+   [
+    "name",
+    []
+   ],
+   [
+    "slug",
+    []
+   ],
+   [
+    "specs",
+    []
+   ]
+  ],
+  "GameData": [
+   [
+    "abilities",
+    [
+     "limit",
+     "page"
+    ]
+   ],
+   [
+    "ability",
+    [
+     "id"
+    ]
+   ],
+   [
+    "class",
+    [
+     "id",
+     "faction_id",
+     "zone_id"
+    ]
+   ],
+   [
+    "classes",
+    [
+     "faction_id",
+     "zone_id"
+    ]
+   ],
+   [
+    "factions",
+    []
+   ]
+  ],
+  "GameAbilityPagination": [
+   [
+    "data",
+    []
+   ],
+   [
+    "total",
+    []
+   ],
+   [
+    "per_page",
+    []
+   ],
+   [
+    "current_page",
+    []
+   ],
+   [
+    "from",
+    []
+   ],
+   [
+    "to",
+    []
+   ],
+   [
+    "last_page",
+    []
+   ],
+   [
+    "has_more_pages",
+    []
+   ]
+  ],
+  "GameEnchant": [
+   [
+    "id",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameFaction": [
+   [
+    "id",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameItem": [
+   [
+    "id",
+    []
+   ],
+   [
+    "icon",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameItemSet": [
+   [
+    "id",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameMap": [
+   [
+    "id",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameNPC": [
+   [
+    "id",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ],
+  "GameSpec": [
+   [
+    "id",
+    []
+   ],
+   [
+    "class",
+    []
+   ],
+   [
+    "name",
+    []
+   ],
+   [
+    "slug",
+    []
+   ]
+  ],
+  "GameZone": [
+   [
+    "id",
+    []
+   ],
+   [
+    "name",
+    []
+   ]
+  ]
+ },
+ "{ gameData { ability(id: 2000158) { id name icon description } } }": {
+  "errors": [
+   {
+    "message": "Cannot query field \"description\" on type \"GameAbility\".",
+    "locations": [
+     {
+      "line": 1,
+      "column": 50
+     }
+    ]
+   }
+  ]
+ },
+ "{ gameData { ability(id: 2000158) { id name icon } } }": {
+  "data": {
+   "gameData": {
+    "ability": {
+     "id": 2000158,
+     "name": null,
+     "icon": "T_Nhance_RPG_Icons_HypnoToad.jpg"
+    }
+   }
+  }
+ },
+ "https://fellows.gg/talent/158/frog-squad": {
+  "status": 200,
+  "taille": 2211,
+  "debut": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"utf-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>Fellows</title>\n    <style>\n        html, body {\n            margin: 0;\n            padding: 0;\n            background: #141414;\n            color: #e5e5e5;\n            min-height: 100%;\n            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;\n        }\n        .wrap {\n            min-height: 100vh;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            text-align: center;\n            padding: 24px;\n        }\n    </style>\n</head>\n<body>\n<div class=\"wrap\">\n    <div>\n        <div style=\"margin-bottom: 12px;\">Please confirm that you are a human and not a bot to continue browsing this site.</div>\n        <button\n            id=\"cookie-consent-accept\"\n            type=\"button\"\n            style=\"cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:8px 16px;border-radius:6px;border:none;background:#1d4ed8;color:#fff;font-size:14px;font-weight:600;\"\n        >\n            I am a human and not a bot\n        </button>\n    </div>\n</div>\n<script>\n    (function () {\n        const button = document.getElementById('cookie-consent-accept');\n        if (!button) return;\n\n        const COOKIE_NAME = \"tomestone_human_verified\";\n        const COOKIE_VALUE = 1;\n        const COOKIE_LIFETIME_DAYS = Number(730",
+  "infernal": [],
+  "scripts_json": []
+ },
+ "https://fellows.gg/api/talents": "<HTTPError 404: 'Not Found'>"
+}
