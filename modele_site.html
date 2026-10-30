@@ -160,6 +160,9 @@ td.n small{color:var(--mute)}
 #tip .tt-h{font-weight:600;font-size:14px}
 #tip .tt-t{font:600 10.5px var(--body);letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
 #tip .tt-l{margin-top:6px;opacity:.75;font-size:12px}
+#tip.wide{max-width:340px}
+#tip .tt-d p{margin:0 0 6px} #tip .tt-d p:last-child{margin:0}
+#tip .kw{font-weight:600;letter-spacing:.03em}
 .ic.lg{width:40px;height:40px;font-size:13px;margin:0}
 .nmc{display:inline-flex;align-items:center}
 .heat .ic{width:29px;height:29px;font-size:11px}
@@ -684,10 +687,18 @@ window.addEventListener("hashchange", () => select(decodeURIComponent(location.h
 
 // Infobulle des icones + ouverture de la fiche fellows.gg au clic
 const tipEl = document.createElement("div"); tipEl.id = "tip"; tipEl.hidden = true; tipEl.setAttribute("role","tooltip"); document.body.appendChild(tipEl);
+function descFor(name){
+  const D = DATA.desc || {}; if(D[name]) return D[name];
+  const lc = name.toLowerCase(), k = Object.keys(D).find(x => x.toLowerCase() === lc); return k ? D[k] : "";
+}
+const fmtDesc = d => esc(d).replace(/\[([A-Z]+)\]|\b(MAJOR|CORE|POWER|BASIC|CONTROL)\b/g, (m,a,b)=>`<b class="kw">${a||b}</b>`)
+  .split(/\n{2,}/).map(par=>`<p>${par.replace(/\n/g,"<br>")}</p>`).join("");
 function showTip(el){
-  const name = el.dataset.tip, info = tipInfo(name), url = el.dataset.url;
+  const name = el.dataset.tip, info = tipInfo(name), url = el.dataset.url, d = descFor(name);
+  tipEl.classList.toggle("wide", !!d);
   tipEl.innerHTML = `<div class="tt-h">${esc(name)}</div>${info.type?`<div class="tt-t">${info.type}</div>`:""}${
-    info.lines.filter(Boolean).map(l=>`<div>${l}</div>`).join("")}${url?`<div class="tt-l">Clic : description complète sur fellows.gg ↗</div>`:""}`;
+    d ? `<div class="tt-d">${fmtDesc(d)}</div>` : info.lines.filter(Boolean).map(l=>`<div>${l}</div>`).join("")}${
+    url?`<div class="tt-l">Clic : fiche sur fellows.gg ↗</div>`:""}`;
   tipEl.hidden = false;
   const r = el.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
   let x = r.left + r.width/2 - w/2, y = r.top - h - 8;

@@ -8,6 +8,7 @@ on:
     paths:
       - modele_site.html
       - build_site.py
+      - descriptions.json
   workflow_dispatch:
 
 permissions:
