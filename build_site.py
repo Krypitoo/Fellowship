@@ -293,22 +293,30 @@ def data_from_html(path):
     return data
 
 
-def collect_icons(builds, icons):
-    """Nom -> fichier d'icone du jeu (talents, cou, traits, benedictions)."""
+def collect_icons(builds, icons, ids):
+    """Nom -> fichier d'icone du jeu et nom -> numero (talents, cou, traits, benedictions)."""
     for b in builds:
         info = b["info"]
         for key in ("talents", "heartOfAzeroth", "artifact"):
             for t in info.get(key) or []:
-                if t.get("name") and t.get("abilityIcon"):
+                if not t.get("name"):
+                    continue
+                if t.get("abilityIcon"):
                     icons.setdefault(clean(t["name"]), t["abilityIcon"])
+                if t.get("type") != 1024 and isinstance(t.get("guid"), int) and t["guid"] >= 1000000:
+                    ids.setdefault(clean(t["name"]), t["guid"])
         for g in gear(b):
             for t in (g.get("traits") or []) + (g.get("blessings") or []):
-                if t.get("name") and t.get("icon"):
+                if not t.get("name"):
+                    continue
+                if t.get("icon"):
                     icons.setdefault(clean(t["name"]), t["icon"])
+                if isinstance(t.get("id"), int) and t["id"] >= 1000000:
+                    ids.setdefault(clean(t["name"]), t["id"])
 
 
 def build_data(files):
-    heroes, enc_names, icons = {}, {}, {}
+    heroes, enc_names, icons, ids = {}, {}, {}, {}
     for f in files:
         p = Path(f)
         hero = p.stem.split("builds_", 1)[-1]
@@ -319,7 +327,7 @@ def build_data(files):
         for b in builds:
             if b.get("encounterName"):
                 enc_names[str(b["encounter"])] = b["encounterName"]
-        collect_icons(builds, icons)
+        collect_icons(builds, icons, ids)
         by_enc = defaultdict(list)
         for b in builds:
             by_enc[str(b["encounter"])].append(b)
@@ -332,7 +340,7 @@ def build_data(files):
              for e in all_enc}
     data = {"generated": datetime.now(timezone.utc).isoformat(timespec="minutes"),
             "heroOrder": KNOWN_HEROES + sorted(h for h in heroes if h not in KNOWN_HEROES),
-            "encounters": names, "icons": icons, "heroes": heroes}
+            "encounters": names, "icons": icons, "ids": ids, "heroes": heroes}
     return data
 
 
