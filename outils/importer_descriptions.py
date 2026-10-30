@@ -46,10 +46,28 @@ def parse(text):
     return out
 
 
+def parse_talent_list(text):
+    """Page d'un heros (talents) : "Nom<cout>" puis "Nom" puis la description."""
+    lines = [l.rstrip() for l in text.splitlines()]
+    heads = [i for i in range(len(lines) - 1)
+             if (m := re.fullmatch(r"(.+?)\d", norm(lines[i]))) and norm(lines[i + 1]) == m.group(1)]
+    out = {}
+    for k, i in enumerate(heads):
+        end = heads[k + 1] if k + 1 < len(heads) else len(lines)
+        body = [l.strip() for l in lines[i + 2:end]]
+        while body and (body[-1] == "" or PATCH.match(body[-1]) or SKIP.match(body[-1])):
+            body.pop()
+        desc = re.sub(r"\n{3,}", "\n\n", "\n".join(body)).strip()
+        if desc:
+            out[norm(lines[i + 1])] = desc
+    return out
+
+
 def main():
     data = json.loads(DEST.read_text(encoding="utf-8")) if DEST.exists() else {}
     for f in sys.argv[1:]:
-        new = parse(Path(f).read_text(encoding="utf-8"))
+        txt = Path(f).read_text(encoding="utf-8")
+        new = parse_talent_list(txt) or parse(txt)
         data.update(new)
         print(f"{f} : {len(new)} descriptions")
     DEST.write_text(json.dumps(dict(sorted(data.items())), ensure_ascii=False, indent=1), encoding="utf-8")
