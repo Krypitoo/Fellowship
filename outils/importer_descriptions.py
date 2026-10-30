@@ -46,6 +46,24 @@ def parse(text):
     return out
 
 
+LINKS = Path(__file__).resolve().parent.parent / "liens_fellows.json"
+MD = re.compile(r"^\[(.+?)\]\((https://fellows\.gg/[^)]+)\)$")
+
+
+def from_markdown(text, links):
+    """Copie au format liens "[2](url)" / "[Nom](url)" : remet "Nom2" / "Nom" et garde les liens."""
+    lines, out = text.splitlines(), []
+    for k, l in enumerate(lines):
+        m, n = MD.match(l.strip()), MD.match(lines[k + 1].strip()) if k + 1 < len(lines) else None
+        if m and m.group(1).isdigit() and n:
+            out.append(norm(n.group(1)) + m.group(1)); links[norm(n.group(1))] = n.group(2)
+        elif m and k > 0 and MD.match(lines[k - 1].strip()) and MD.match(lines[k - 1].strip()).group(1).isdigit():
+            out.append(norm(m.group(1)))
+        else:
+            out.append(l)
+    return "\n".join(out)
+
+
 def parse_talent_list(text):
     """Page d'un heros (talents) : "Nom<cout>" puis "Nom" puis la description."""
     lines = [l.rstrip() for l in text.splitlines()]
@@ -55,7 +73,8 @@ def parse_talent_list(text):
     for k, i in enumerate(heads):
         end = heads[k + 1] if k + 1 < len(heads) else len(lines)
         body = [l.strip() for l in lines[i + 2:end]]
-        while body and (body[-1] == "" or PATCH.match(body[-1]) or SKIP.match(body[-1])):
+        while body and (body[-1] == "" or PATCH.match(body[-1]) or SKIP.match(body[-1])
+                        or body[-1] in ("Items", "Talents", "Abilities", "Weapons", "Blessings")):
             body.pop()
         desc = re.sub(r"\n{3,}", "\n\n", "\n".join(body)).strip()
         if desc:
@@ -65,13 +84,17 @@ def parse_talent_list(text):
 
 def main():
     data = json.loads(DEST.read_text(encoding="utf-8")) if DEST.exists() else {}
+    links = json.loads(LINKS.read_text(encoding="utf-8")) if LINKS.exists() else {}
     for f in sys.argv[1:]:
-        txt = Path(f).read_text(encoding="utf-8")
+        txt = from_markdown(Path(f).read_text(encoding="utf-8"), links)
         new = parse_talent_list(txt) or parse(txt)
         data.update(new)
         print(f"{f} : {len(new)} descriptions")
     DEST.write_text(json.dumps(dict(sorted(data.items())), ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"-> {DEST.name} : {len(data)} descriptions au total")
+    if links:
+        LINKS.write_text(json.dumps(dict(sorted(links.items())), ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"-> {LINKS.name} : {len(links)} liens")
 
 
 if __name__ == "__main__":

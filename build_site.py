@@ -348,6 +348,9 @@ def render(data, out, fragment):
     desc_file = HERE / "descriptions.json"   # descriptions copiees depuis fellows.gg
     if desc_file.exists():
         data["desc"] = json.loads(desc_file.read_text(encoding="utf-8"))
+    links_file = HERE / "liens_fellows.json"   # liens fellows.gg releves sur leurs pages
+    if links_file.exists():
+        data["links"] = json.loads(links_file.read_text(encoding="utf-8"))
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
     if not fragment:
