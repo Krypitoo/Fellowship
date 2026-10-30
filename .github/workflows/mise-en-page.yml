@@ -9,6 +9,7 @@ on:
       - modele_site.html
       - build_site.py
       - descriptions.json
+      - liens_fellows.json
   workflow_dispatch:
 
 permissions:
