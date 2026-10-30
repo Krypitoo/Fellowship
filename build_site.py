@@ -32,7 +32,7 @@ SLOT_GROUPS = [
 ]
 SLOT_LABELS = {s: lab for lab, ss in SLOT_GROUPS for s in ss}
 GEAR_SLOTS = set(range(14))           # 14 et 15 = potion, rez : ignores
-SECONDARY = ["Crit", "Haste", "Expertise", "Spirit"]
+SECONDARY = ["Crit", "Expertise", "Haste", "Spirit"]   # ordre d'affichage
 SECONDARY_FR = {"Crit": "Critique", "Haste": "Hâte", "Expertise": "Expertise", "Spirit": "Esprit"}
 MAIN_STATS = ["Strength", "Agility", "Intellect"]
 MAIN_FR = {"Strength": "Force", "Agility": "Agilité", "Intellect": "Intelligence"}
@@ -134,29 +134,29 @@ def aggregate(builds):
         pc = [v / 100 for v in (stat(b, k + "Percent") for b in builds) if v is not None]
         if not pc:
             continue
-        q1, q3 = quart(pc)
+        q1, q3 = quart(raw)
         sec.append({"key": k, "label": SECONDARY_FR[k], "raw": r1(med(raw)),
-                    "pct": r1(med(pc)), "q1": r1(q1), "q3": r1(q3),
-                    "min": r1(min(pc)), "max": r1(max(pc))})
-    sec.sort(key=lambda s: -s["pct"])
+                    "q1": r1(q1), "q3": r1(q3), "min": r1(min(raw)), "max": r1(max(raw)),
+                    "pct": r1(med(pc))})
     A["secondary"] = sec
 
     other = []
-    for k in MAIN_STATS:
-        v = [x for x in (stat(b, k) for b in builds) if x is not None]
+
+    def add_other(label, v):
         if v:
-            other.append({"label": MAIN_FR[k], "median": r1(med(v))})
+            q1, q3 = quart(v)
+            other.append({"label": label, "median": r1(med(v)), "q1": r1(q1), "q3": r1(q3),
+                          "min": r1(min(v)), "max": r1(max(v))})
+    for k in MAIN_STATS:
+        add_other(MAIN_FR[k], [x for x in (stat(b, k) for b in builds) if x is not None])
     ilvl = []
     for b in builds:
         lv = [g.get("itemLevel") for g in gear(b) if g.get("itemLevel")]
         if lv:
             ilvl.append(sum(lv) / len(lv))
-    if ilvl:
-        other.append({"label": "Niveau d'objet moyen", "median": r1(med(ilvl))})
+    add_other("Niveau d'objet moyen", ilvl)
     for k, lab in (("Stamina", "Endurance"), ("Health", "Points de vie"), ("Armor", "Armure")):
-        v = [x for x in (stat(b, k) for b in builds) if x is not None]
-        if v:
-            other.append({"label": lab, "median": r1(med(v))})
+        add_other(lab, [x for x in (stat(b, k) for b in builds) if x is not None])
     A["otherStats"] = other
 
     # Gemmes : puissance par couleur + gemmes serties
@@ -257,14 +257,49 @@ def enc_short(e):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("files", nargs="+", help="fichiers builds_<heros>.json")
+    ap.add_argument("files", nargs="*", help="fichiers builds_<heros>.json")
+    ap.add_argument("--from-html", metavar="PAGE",
+                    help="reprend les donnees deja calculees dans une page existante "
+                         "(ex. docs/index.html) : change seulement la mise en page")
     ap.add_argument("-o", "--out", default="index.html")
     ap.add_argument("--fragment", action="store_true",
                     help="sans <html>/<head> (pour une publication sur Claude)")
     args = ap.parse_args()
 
-    heroes, enc_names = {}, {}
-    for f in args.files:
+    if args.from_html:
+        data = data_from_html(Path(args.from_html))
+        print(f"Donnees reprises de {args.from_html} ({len(data['heroes'])} heros)")
+    elif args.files:
+        data = build_data(args.files)
+    else:
+        ap.error("donne des fichiers builds_<heros>.json ou --from-html")
+    render(data, Path(args.out), args.fragment)
+
+
+def data_from_html(path):
+    s = path.read_text(encoding="utf-8")
+    i = s.index("const DATA = ") + len("const DATA = ")
+    data, _ = json.JSONDecoder().raw_decode(s[i:])
+    return data
+
+
+def collect_icons(builds, icons):
+    """Nom -> fichier d'icone du jeu (talents, cou, traits, benedictions)."""
+    for b in builds:
+        info = b["info"]
+        for key in ("talents", "heartOfAzeroth", "artifact"):
+            for t in info.get(key) or []:
+                if t.get("name") and t.get("abilityIcon"):
+                    icons.setdefault(clean(t["name"]), t["abilityIcon"])
+        for g in gear(b):
+            for t in (g.get("traits") or []) + (g.get("blessings") or []):
+                if t.get("name") and t.get("icon"):
+                    icons.setdefault(clean(t["name"]), t["icon"])
+
+
+def build_data(files):
+    heroes, enc_names, icons = {}, {}, {}
+    for f in files:
         p = Path(f)
         hero = p.stem.split("builds_", 1)[-1]
         builds = json.loads(p.read_text(encoding="utf-8"))
@@ -274,6 +309,7 @@ def main():
         for b in builds:
             if b.get("encounterName"):
                 enc_names[str(b["encounter"])] = b["encounterName"]
+        collect_icons(builds, icons)
         by_enc = defaultdict(list)
         for b in builds:
             by_enc[str(b["encounter"])].append(b)
@@ -286,15 +322,18 @@ def main():
              for e in all_enc}
     data = {"generated": datetime.now(timezone.utc).isoformat(timespec="minutes"),
             "heroOrder": KNOWN_HEROES + sorted(h for h in heroes if h not in KNOWN_HEROES),
-            "encounters": names, "heroes": heroes}
+            "encounters": names, "icons": icons, "heroes": heroes}
+    return data
+
+
+def render(data, out, fragment):
     payload = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8").replace("/*__DATA__*/null", payload)
-    if not args.fragment:
+    if not fragment:
         head, body = html.split("</style>", 1)
         html = ('<!doctype html>\n<html lang="fr"><head><meta charset="utf-8">\n'
                 '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
                 + head + "</style>\n</head><body>" + body + "</body></html>\n")
-    out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
     print(f"-> {out} ({out.stat().st_size // 1024} Ko)")

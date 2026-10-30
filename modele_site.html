@@ -79,10 +79,31 @@ td.n small{color:var(--mute)}
 .slots td:first-child{font-weight:600;white-space:nowrap;width:1%}
 .it{display:inline-block;margin:0 14px 2px 0}
 .it .p{font:12px var(--mono);color:var(--mute);margin-left:4px}
-.it.maj{color:var(--core);font-weight:600}
+.it{color:var(--mute)}
+.it.maj{color:var(--ink);font-weight:600;background:color-mix(in srgb,var(--core) 14%,var(--panel));border:1px solid var(--core);border-radius:4px;padding:2px 8px}
+.it.maj .p{color:var(--core);font-weight:600}
 .it.leg{color:var(--legend)}
 .note{color:var(--mute);font-size:12.5px;margin:8px 0 0}
 .empty{color:var(--mute);font-size:14px;margin:0}
+.ic{position:relative;flex:none;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font:600 10px var(--body);text-transform:uppercase;overflow:hidden;margin-right:8px;vertical-align:middle;border:1px solid var(--line)}
+.ic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ic.lg{width:40px;height:40px;font-size:13px;margin:0}
+.nmc{display:inline-flex;align-items:center}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.tile{display:grid;grid-template-columns:40px minmax(0,1fr);gap:6px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
+.tile .track{grid-column:1/-1;height:5px}
+.tile .nm{font-size:14px;line-height:1.25;overflow-wrap:anywhere}
+.tile .cnt{font:12px var(--mono);color:var(--mute)} .tile .cnt b{color:var(--ink);font-weight:500}
+.tile.core{border-color:var(--core);background:color-mix(in srgb,var(--core) 7%,var(--panel))}
+.tile.core .nm{font-weight:600} .tile.core .fill{background:var(--core)}
+.range .mm{position:absolute;top:4px;height:2px;background:var(--mute);opacity:.6}
+.axis{display:grid;grid-template-columns:90px minmax(0,1fr) 120px;gap:10px}
+.ticks{position:relative;height:16px;font:11px var(--mono);color:var(--mute)}
+.ticks i{position:absolute;transform:translateX(-50%);font-style:normal}
+.ticks i:first-child{transform:none} .ticks i:last-child{transform:translateX(-100%)}
+.statrow .v b{font:600 17px var(--mono);color:var(--ink)}
+table.other{margin-top:14px}
+.other td.n b{font-weight:600}
 table.heat{min-width:380px}
 .heat th.c,.heat td.c{text-align:center;font-family:var(--mono);width:34px;padding:6px 2px}
 .heat td.n small{display:block}
@@ -94,7 +115,7 @@ table.heat{min-width:380px}
 .heat td.c.zero{background:none}
 .heat tr.core td:first-child{font-weight:600}
 footer{color:var(--mute);font-size:13px;padding-block:0 32px}
-@media (max-width:480px){.statrow{grid-template-columns:72px minmax(0,1fr) 92px}.row{grid-template-columns:minmax(0,1fr) 28% 46px}}
+@media (max-width:480px){.statrow,.axis{grid-template-columns:72px minmax(0,1fr) 92px}.row{grid-template-columns:minmax(0,1fr) 28% 46px}}
 @media (prefers-reduced-motion:no-preference){.fill{transition:width .35s ease}}
 </style>
 
@@ -114,12 +135,20 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const fr = (x, d=0) => x==null ? "–" : Number(x).toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d});
 const P = p => fr(p) + " %";
 let hero = null, enc = "all";
+// Adresse des icones du jeu (a completer) ; vide = initiales a la place des icones
+const ICON_BASE = "https://assets.fellows.gg/static/icons/";
+const STAT_MAX = 350;
+function initials(n){ const w=n.replace(/^The /,"").split(/[\s'/-]+/).filter(Boolean); return (w[0]?.[0]||"")+(w[1]?.[0]||""); }
+function ic(name, cls=""){
+  const f = (DATA.icons||{})[name];
+  return `<span class="ic ${cls}" aria-hidden="true">${esc(initials(name))}${ICON_BASE&&f?`<img src="${ICON_BASE}${encodeURIComponent(f)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span>`;
+}
 
 function bars(list, opts={}){
   if(!list.length) return '<p class="empty">Aucune donnée.</p>';
   return list.map(x => {
     const core = x.pct >= 50 && opts.core !== false;
-    return `<div class="row${core?" core":""}"><div class="lab">${esc(x.name)}${opts.extra?opts.extra(x):""}</div>
+    return `<div class="row${core?" core":""}"><div class="lab">${opts.icon?ic(x.name):""}${esc(x.name)}${opts.extra?opts.extra(x):""}</div>
       <div class="track"><div class="fill" style="width:${x.pct}%"></div></div><div class="v">${P(x.pct)}</div></div>`;
   }).join("");
 }
@@ -142,7 +171,7 @@ function heatTable(list, head){
     keys.map(k=>`<th class="c">${lab(k)}</th>`).join("")}</tr></thead><tbody>${
     list.map(x=>{
       const tot = Object.values(x.dist||{}).reduce((a,b)=>a+b,0) || 1;
-      return `<tr class="${x.pct>=50?"core":""}"><td>${esc(x.name)}</td><td class="n">${x.n} <small>(${P(x.pct)})</small></td><td class="n">${fr(x.median,x.median%1?1:0)}</td>${
+      return `<tr class="${x.pct>=50?"core":""}"><td><span class="nmc">${ic(x.name)}${esc(x.name)}</span></td><td class="n">${x.n} <small>(${P(x.pct)})</small></td><td class="n">${fr(x.median,x.median%1?1:0)}</td>${
         keys.map(k=>{ const c=(x.dist||{})[k]||0; const a=c?0.12+0.88*c/tot:0;
           return `<td class="c${c?"":" zero"}${a>0.6?" hot":""}" style="--a:${a.toFixed(2)}" title="${c} build(s) au niveau ${lab(k)}">${c||""}</td>`; }).join("")}</tr>`;
     }).join("")}</tbody></table></div>`;
@@ -160,8 +189,7 @@ function render(){
   const A = enc === "all" ? H.all : H.byEncounter[enc];
   const encs = Object.keys(H.byEncounter);
   const sec = A.secondary;
-  const maxPct = Math.max(...sec.map(s=>s.max||0), 1);
-  const scale = v => Math.min(100, 100 * v / (maxPct * 1.05));
+  const sc = v => Math.max(0, Math.min(100, 100 * v / STAT_MAX));
   const gmax = Math.max(...A.gemPower.map(g=>g.q3||g.median||0), 1);
   const encLabel = enc==="all" ? `${encs.length} donjon${encs.length>1?"s":""}` : esc(DATA.encounters[enc]);
 
@@ -182,21 +210,25 @@ function render(){
   <div class="grid">
     <section class="panel full">
       <h2>Talents</h2>
-      <div class="cols2">${bars(A.talents)}</div>
-      <h3>Combinaisons complètes les plus jouées</h3>${combos(A.talentCombos)}
-      <p class="note">En vert : talent pris par au moins la moitié des joueurs.</p>
+      <div class="tgrid">${A.talents.map(x=>`<div class="tile${x.pct>=50?" core":""}">${ic(x.name,"lg")}
+        <div class="tx"><div class="nm">${esc(x.name)}</div><div class="cnt"><b>${x.n}</b> sélection${x.n>1?"s":""} · ${P(x.pct)}</div></div>
+        <div class="track"><div class="fill" style="width:${x.pct}%"></div></div></div>`).join("")}</div>
+      <h3>Combinaisons complètes les plus jouées</h3><div class="cols">${combos(A.talentCombos)}</div>
+      <p class="note">En vert : talent pris par au moins la moitié des joueurs. Sélections = nombre de joueurs qui ont pris le talent, sur ${A.n}.</p>
     </section>
 
     <section class="panel">
       <h2>Stats secondaires</h2>
-      <p class="prio">${sec.map(s=>`<b>${s.label}</b>`).join('<span class="gt">&gt;</span>')}</p>
+      <div class="axis"><span></span><div class="ticks">${[0,100,200,300].map(v=>`<i style="left:${v/STAT_MAX*100}%">${v}</i>`).join("")}<i style="left:100%">${STAT_MAX}</i></div><span></span></div>
       ${sec.map(s=>`<div class="statrow"><div>${s.label}</div>
-        <div class="range" title="50 % des joueurs entre ${fr(s.q1,1)} et ${fr(s.q3,1)} %">
-          <div class="iqr" style="left:${scale(s.q1)}%;width:${Math.max(scale(s.q3)-scale(s.q1),1)}%"></div>
-          <div class="med" style="left:${scale(s.pct)}%"></div></div>
-        <div class="v">${fr(s.pct,1)} % <small>(${fr(s.raw)})</small></div></div>`).join("")}
-      <p class="note">Trait plein : médiane. Zone claire : la moitié des joueurs. Entre parenthèses : valeur de stat brute.</p>
-      <dl class="kv">${A.otherStats.map(o=>`<dt>${o.label}</dt><dd>${fr(o.median, o.median%1&&o.median<1000?1:0)}</dd>`).join("")}</dl>
+        <div class="range" title="Min ${fr(s.min)} · zone courante ${fr(s.q1)} – ${fr(s.q3)} · max ${fr(s.max)}">
+          <div class="mm" style="left:${sc(s.min)}%;width:${Math.max(sc(s.max)-sc(s.min),0.5)}%"></div>
+          <div class="iqr" style="left:${sc(s.q1)}%;width:${Math.max(sc(s.q3)-sc(s.q1),1)}%"></div>
+          <div class="med" style="left:${sc(s.raw)}%"></div></div>
+        <div class="v"><b>${fr(s.raw)}</b> <small>${fr(s.pct,1)} %</small></div></div>`).join("")}
+      <p class="note">Échelle 0 – ${STAT_MAX}. Trait plein : médiane. Zone claire : la moitié des joueurs. Trait fin : du minimum au maximum. En petit : pourcentage correspondant.</p>
+      <div class="scroll"><table class="other"><thead><tr><th>Autres stats</th><th class="n">Médiane</th><th class="n">Zone courante</th><th class="n">Min – max</th></tr></thead><tbody>${
+        A.otherStats.map(o=>{const d=o.median<1000&&o.median%1?1:0;return `<tr><td>${o.label}</td><td class="n"><b>${fr(o.median,d)}</b></td><td class="n">${fr(o.q1,d)} – ${fr(o.q3,d)}</td><td class="n"><small>${fr(o.min,d)} – ${fr(o.max,d)}</small></td></tr>`}).join("")}</tbody></table></div>
     </section>
 
     <section class="panel">
@@ -204,7 +236,6 @@ function render(){
       ${A.gemPower.map(g=>`<div class="row"><div class="lab"><span class="dot" style="background:${GEM[g.key][1]}"></span>${GEM[g.key][0]}</div>
         <div class="track"><div class="fill" style="width:${100*g.median/gmax}%;background:${GEM[g.key][1]}"></div></div><div class="v">${fr(g.median)}</div></div>`).join("")}
       <p class="note">Puissance totale de gemmes par couleur (médiane).</p>
-      <h3>Gemmes serties</h3>${bars(A.gems,{core:false})}
     </section>
 
     <section class="panel">
@@ -219,11 +250,11 @@ function render(){
       <p class="note">Colonnes : niveau total de la bénédiction sur l'équipement, et nombre de builds à ce niveau.</p>
     </section>
 
-    <section class="panel">
+    <section class="panel full">
       <h2>Objets par emplacement</h2>
       <div class="scroll"><table class="slots"><tbody>${A.slots.map(s=>`<tr><td>${s.slot}</td><td>${
         s.items.map(i=>`<span class="it${i.pct>=50?" maj":""}">${esc(i.name)}<span class="p">${P(i.pct)}</span></span>`).join("")}</td></tr>`).join("")}</tbody></table></div>
-      <p class="note">Pourcentage de joueurs qui portent l'objet. En vert : objet incontournable (au moins 50 %).</p>
+      <p class="note">Pourcentage de joueurs qui portent l'objet. Encadré vert : objet incontournable (au moins 50 %).</p>
     </section>
 
     <section class="panel">
@@ -236,11 +267,11 @@ function render(){
 
     <section class="panel">
       <h2>Cou</h2>
-      ${bars(A.neck)}
+      ${bars(A.neck,{icon:true})}
       <h3>Combinaisons</h3>${combos(A.neckCombos)}
     </section>
 
-    <section class="panel">
+    <section class="panel full">
       <h2>Enchantements</h2>
       ${levelTable(A.enchants,"Might / Guille / Cunning")}
       <p class="note">Total = somme des rangs sur tout l'équipement. Zone courante = la moitié des joueurs.</p>
