@@ -20,8 +20,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 TEMPLATE = HERE / "modele_site.html"
 
-KNOWN_HEROES = ["Helena", "Mara", "Elarion", "Xavian", "Sylvie", "Ardeos",
-                "Tariq", "Vigour", "Meiko", "Rime", "Aeona", "Gunde"]
+KNOWN_HEROES = ["Helena", "Meiko", "Xavian", "Gunde", "Tariq", "Mara",
+                "Rime", "Elarion", "Ardeos", "Sylvie", "Vigour", "Aeona"]
 # Noms de secours si le fichier de builds ne contient pas encore "encounterName"
 ENCOUNTER_NAMES = {6: "Empyrean Sands", 7: "Cithrel's Fall"}
 

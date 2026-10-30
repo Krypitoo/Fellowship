@@ -145,6 +145,8 @@ let hero = null, enc = "all";
 // Adresse des icones du jeu (a completer) ; vide = initiales a la place des icones
 const ICON_BASE = "https://assets.fellows.gg/static/icons/";
 const STAT_MAX = 350;
+const HERO_ORDER = ["Helena","Meiko","Xavian","Gunde","Tariq","Mara","Rime","Elarion","Ardeos","Sylvie","Vigour","Aeona"];
+const heroOrder = () => HERO_ORDER.concat(DATA.heroOrder.filter(h => !HERO_ORDER.includes(h)));
 // Aspects (le reste des traits a rang = sigils)
 const ASPECTS = ["Amethyst Splinters","Brave Machinations","Diamond Strike","Emerald Judgement",
   "Martial Initiative","Ruby Storm","Visions of Grandeur","Sapphire Aurastone"];
@@ -174,8 +176,42 @@ function talentList(A){
   return out.concat(A.talents.filter(t => !seen.has(t.name)));   // talent absent de la liste : a la fin
 }
 function initials(n){ const w=n.replace(/^The /,"").split(/[\s'/-]+/).filter(Boolean); return (w[0]?.[0]||"")+(w[1]?.[0]||""); }
+// Icones des talents que personne ne prend (absents des donnees) : nom -> fichier sur fellows.gg
+const EXTRA_ICONS = {
+  "Deadly Focus": "Bowguy_FocusShot.jpg",
+  "Quickening": "T_Lisa_TimeMend.jpg",
+  "Crackling Inferno": "Pyromancer15.jpg",
+  "Intensifying Inferno": "Firemage_Bolt.jpg",
+  "Burning Initiative": "Tex_SpellBook01_33.jpg",
+  "Sundered Flesh": "T_Nhance_RPG_Icons_NightmareAura.jpg",
+  "Lingering Rush": "T_HandsOfBlood.jpg",
+  "Punishing Strikes": "T_Warmaster_FatalBlow.jpg",
+  "Red Ledger": "Mara_Bleed.jpg",
+  "Arachnid Onslaught": "Mara_SpiderAOE.jpg",
+  "Caustic Wounds": "Mara_backstab.jpg",
+  "Every Other Flutter": "T_Nhance_RPG_Arcane_02.jpg",
+  "Bloomin' Boomshrooms": "T_Mosse_Boomshroom.jpg",
+  "Verdant Restoration": "T_Nhance_RPG_Shadow_58.jpg",
+  "Left Hand Path": "T_Ink_Facebreaker.jpg",
+  "Alacritous Healing": "T_Vigor_Heal.jpg",
+  "Enduring Light": "T_Vigor_AoEHeal.jpg",
+  "Dawn Strider": "T_Vigor_DawnSphere.jpg",
+  "Ascending Avatar": "T_Vigor_Spirit.jpg",
+  "Divine Light": "Priest20.jpg",
+  "Grand Halo": "T_SolarEclipse.jpg",
+  "Light's Oath": "T_Sune_ShiningHalo.jpg",
+  "Gleaming Strikes": "T_Sune_Sunstrike.jpg",
+  "Healing Halo": "T_Nhance_RPG_Icons_SpiritLiquid.jpg",
+  "Sun's Verdict": "T_HolyFire_00.jpg",
+};
+const ICON_LC = {};
+function iconFor(name){
+  const all = Object.assign({}, EXTRA_ICONS, DATA.icons||{});
+  if(!ICON_LC._ok){ for(const k in all) ICON_LC[k.toLowerCase()] = all[k]; ICON_LC._ok = true; }
+  return all[name] || ICON_LC[name.toLowerCase()];
+}
 function ic(name, cls=""){
-  const f = (DATA.icons||{})[name];
+  const f = iconFor(name);
   return `<span class="ic ${cls}" aria-hidden="true">${esc(initials(name))}${ICON_BASE&&f?`<img src="${ICON_BASE}${encodeURIComponent(f)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span>`;
 }
 
@@ -200,7 +236,7 @@ function levelTable(list, head){
 // Repartition des niveaux : une colonne par niveau total, intensite = part des builds de la ligne
 function heatTable(list, head){
   if(!list.length) return '<p class="empty">Aucune donnée.</p>';
-  const keys = [...new Set(list.flatMap(x=>Object.keys(x.dist||{})))].map(Number).sort((a,b)=>a-b);
+  const keys = [...new Set(list.flatMap(x=>Object.keys(x.dist||{})))].map(Number).filter(k=>k>0).sort((a,b)=>a-b);
   const lab = k => k===0 ? "arme" : (k>=8 ? "8+" : k);
   return `<div class="scroll"><table class="heat"><thead><tr><th>${head}</th><th class="n">Builds</th><th class="n">Méd.</th>${
     keys.map(k=>`<th class="c">${lab(k)}</th>`).join("")}</tr></thead><tbody>${
@@ -213,7 +249,7 @@ function heatTable(list, head){
 }
 
 function renderTabs(){
-  $("#tabs").innerHTML = DATA.heroOrder.map(h => {
+  $("#tabs").innerHTML = heroOrder().map(h => {
     const ok = !!DATA.heroes[h];
     return `<button class="tab" type="button" data-h="${esc(h)}" ${ok?"":"disabled title=\"Pas encore de données\""} aria-current="${h===hero}">${esc(h)}</button>`;
   }).join("");
@@ -276,7 +312,7 @@ function render(){
     <section class="panel">
       <h2>Aspects</h2>
       ${heatTable(A.traits.filter(x=>isAspect(x.name)),"Aspect")}
-      <p class="note">Colonnes : rang total sur l'équipement, et nombre de builds à ce rang. « arme » : actif uniquement via l'arbre de l'arme. Médiane calculée sur les builds qui le portent.</p>
+      <p class="note">Colonnes : rang total sur l'équipement, et nombre de builds à ce rang. Médiane calculée sur les builds qui le portent.</p>
     </section>
 
     <section class="panel">
@@ -321,7 +357,7 @@ function render(){
 }
 
 function select(h){
-  if(!DATA.heroes[h]) h = DATA.heroOrder.find(x=>DATA.heroes[x]);
+  if(!DATA.heroes[h]) h = heroOrder().find(x=>DATA.heroes[x]);
   if(h !== hero) enc = "all";
   hero = h;
   try{ localStorage.setItem("hero", h); }catch(e){}
