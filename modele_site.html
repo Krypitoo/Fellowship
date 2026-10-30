@@ -163,6 +163,7 @@ td.n small{color:var(--mute)}
 #tip.wide{max-width:340px}
 #tip .tt-d p{margin:0 0 6px} #tip .tt-d p:last-child{margin:0}
 #tip .kw{font-weight:600;letter-spacing:.03em}
+#tip .tt-d p.kwh{margin:8px 0 2px;font:600 10.5px var(--body);letter-spacing:.08em;opacity:.8}
 .ic.lg{width:40px;height:40px;font-size:13px;margin:0}
 .nmc{display:inline-flex;align-items:center}
 .heat .ic{width:29px;height:29px;font-size:11px}
@@ -692,7 +693,7 @@ function descFor(name){
   const lc = name.toLowerCase(), k = Object.keys(D).find(x => x.toLowerCase() === lc); return k ? D[k] : "";
 }
 const fmtDesc = d => esc(d).replace(/\[([A-Z]+)\]|\b(MAJOR|CORE|POWER|BASIC|CONTROL)\b/g, (m,a,b)=>`<b class="kw">${a||b}</b>`)
-  .split(/\n{2,}/).map(par=>`<p>${par.replace(/\n/g,"<br>")}</p>`).join("");
+  .split(/\n{2,}/).map(par=>/^[A-Z][A-Z '’-]{3,}$/.test(par.trim()) ? `<p class="kwh">${par}</p>` : `<p>${par.replace(/\n/g,"<br>")}</p>`).join("");
 function showTip(el){
   const name = el.dataset.tip, info = tipInfo(name), url = el.dataset.url, d = descFor(name);
   tipEl.classList.toggle("wide", !!d);
