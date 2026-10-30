@@ -111,6 +111,8 @@ td.n small{color:var(--mute)}
 .pick.sel{border:2px solid var(--accent);background:var(--accent-soft);padding:7px}
 .pick.sel .nm{font-weight:600} .pick .cnt b{color:var(--accent);font-weight:600}
 .pick:not(.sel) .ic img{filter:grayscale(.7);opacity:.75}
+.pick.nofit{opacity:.45;cursor:not-allowed}
+.h2x.over{color:#b3261e}
 .pstat{display:grid;grid-template-columns:80px minmax(0,1fr) 70px;gap:4px 10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
 .pstat input[type=range]{width:100%;accent-color:var(--accent)}
 .pstat input[type=number]{width:70px;font-family:var(--mono);text-align:right}
@@ -155,6 +157,12 @@ td.n small{color:var(--mute)}
 .gleg i.t2{background:color-mix(in srgb,var(--mute) 62%,var(--panel))} .gleg i.t3{background:var(--mute)}
 .ic{position:relative;flex:none;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:4px;background:var(--accent-soft);color:var(--accent);font:600 10px var(--body);text-transform:uppercase;overflow:hidden;margin-right:8px;vertical-align:middle;border:1px solid var(--line)}
 .ic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ic.lk{cursor:pointer}
+.ic.lk:hover,.ic.lk:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#tip{position:fixed;z-index:20;max-width:260px;background:var(--ink);color:var(--panel);border-radius:6px;padding:8px 10px;font:13px/1.4 var(--body);box-shadow:0 4px 16px rgba(0,0,0,.25);pointer-events:none}
+#tip .tt-h{font-weight:600;font-size:14px}
+#tip .tt-t{font:600 10.5px var(--body);letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
+#tip .tt-l{margin-top:6px;opacity:.75;font-size:12px}
 .ic.lg{width:40px;height:40px;font-size:13px;margin:0}
 .nmc{display:inline-flex;align-items:center}
 .heat .ic{width:29px;height:29px;font-size:11px}
@@ -282,9 +290,32 @@ function iconFor(name){
   if(!ICON_LC._ok){ for(const k in all) ICON_LC[k.toLowerCase()] = all[k]; ICON_LC._ok = true; }
   return all[name] || ICON_LC[name.toLowerCase()];
 }
+// Lien vers la fiche fellows.gg (numero du jeu : 2xxxxxx talent, 3xxxxxx trait/cou, 4xxxxxx benediction)
+const FG_TYPES = {2:"talent", 3:"weapon-trait", 4:"blessing"};
+const slug = n => n.toLowerCase().replace(/['’]/g,"").replace(/&/g,"and").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+function fellowsUrl(name){
+  const ids = DATA.ids || {}; let id = ids[name];
+  if(id == null){ const k = Object.keys(ids).find(x => x.toLowerCase() === name.toLowerCase()); if(k) id = ids[k]; }
+  const kind = id ? FG_TYPES[Math.floor(id / 1000000)] : null;
+  return kind ? `https://fellows.gg/${kind}/${id % 1000000}/${slug(name)}` : "";
+}
+function tipInfo(name){
+  const H = DATA.heroes[hero]; if(!H) return {type:"", lines:[]};
+  const A = (mode !== "plan" && enc !== "all") ? H.byEncounter[enc] : H.all;
+  const lc = name.toLowerCase(), find = l => (l||[]).find(x => x.name.toLowerCase() === lc);
+  const md = v => v==null ? "–" : fr(v, v%1?1:0);
+  let x;
+  if((x = find(talentList(A)))) return {type:"Talent", lines:[x.cost?`Coût ${x.cost}`:"", `Pris par ${P(x.pct)} du top 30 (${x.n} / ${A.n})`]};
+  if((x = find(A.traits))) return {type:isAspect(x.name)?"Aspect":"Sigil", lines:[`Porté par ${P(x.pct)} du top 30`, `Rang médian ${md(x.median)}`]};
+  if((x = find(A.blessings))) return {type:"Bénédiction", lines:[`Portée par ${P(x.pct)} du top 30`, `Niveau médian ${md(x.median)}`]};
+  if((x = find(A.neck))) return {type:"Choix du cou", lines:[`Pris par ${P(x.pct)} du top 30`]};
+  if((x = find(A.enchants))) return {type:"Enchantement", lines:[`Porté par ${P(x.pct)} du top 30`, `Total médian ${md(x.median)}`]};
+  if(isAspect(name)) return {type:"Aspect", lines:["Peu joué dans le top 30"]};
+  return {type:"", lines:[]};
+}
 function ic(name, cls=""){
-  const f = iconFor(name);
-  return `<span class="ic ${cls}" aria-hidden="true">${esc(initials(name))}${ICON_BASE&&f?`<img src="${ICON_BASE}${encodeURIComponent(f)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span>`;
+  const f = iconFor(name), url = fellowsUrl(name);
+  return `<span class="ic ${cls}${url?" lk":""}" data-tip="${esc(name)}"${url?` data-url="${esc(url)}" role="link" tabindex="0" aria-label="${esc(name)} : fiche sur fellows.gg"`:' aria-hidden="true"'}>${esc(initials(name))}${ICON_BASE&&f?`<img src="${ICON_BASE}${encodeURIComponent(f)}" alt="" loading="lazy" onerror="this.remove()">`:""}</span>`;
 }
 
 function bars(list, opts={}){
@@ -439,6 +470,7 @@ function render(){
 // Sauvegarde dans ce navigateur uniquement (localStorage), avec export / import par code.
 const STORE_KEY = "fellowship-objectifs-v1";
 const STAT_KEYS = ["Crit","Expertise","Haste","Spirit"];
+const TALENT_POINTS = 14;   // points de talents disponibles en jeu
 const STAT_FR = {Crit:"Critique",Expertise:"Expertise",Haste:"Hâte",Spirit:"Esprit"};
 let mode = "stats";
 let planUi = {exp:false, imp:false, del:false, msg:""};
@@ -461,7 +493,9 @@ function emptyBuild(name){
 }
 function topBuild(name){
   const A = DATA.heroes[hero].all, b = emptyBuild(name);
-  b.talents = talentList(A).filter(t=>t.pct>=50).map(t=>t.name);
+  let pts = 0;
+  b.talents = talentList(A).filter(t=>t.pct>=50).sort((x,y)=>y.pct-x.pct)
+    .filter(t=>{ const c=t.cost||0; if(pts+c>TALENT_POINTS) return false; pts+=c; return true; }).map(t=>t.name);
   A.secondary.forEach(s=>{ b.stats[s.key] = Math.round(s.raw); });
   if(A.gemTiers) for(const k of GEM_ORDER){ const tr=A.gemTiers[k]; if(tr) b.gems[k] = tr.indexOf(Math.max(...tr)); }
   b.neck = A.neck.slice(0,3).map(x=>x.name);
@@ -532,11 +566,11 @@ function renderPlan(){
   </section>
   <div class="grid">
     <section class="panel full">
-      <h2>Talents <span class="h2x">${chosenT.length} choisi${chosenT.length>1?"s":""} · coût total ${cost}</span></h2>
-      <div class="tgrid${TALENT_LAYOUT[hero]?" game":""}">${tl.map(t=>{const on=B.talents.includes(t.name);return `<button type="button" class="tile pick${on?" sel":""}" data-act="tal" data-n="${esc(t.name)}" aria-pressed="${on}">
+      <h2>Talents <span class="h2x${cost>TALENT_POINTS?" over":""}">${cost} / ${TALENT_POINTS} points · ${chosenT.length} talent${chosenT.length>1?"s":""}</span></h2>
+      <div class="tgrid${TALENT_LAYOUT[hero]?" game":""}">${tl.map(t=>{const on=B.talents.includes(t.name); const nofit=!on && cost+(t.cost||0)>TALENT_POINTS; return `<button type="button" class="tile pick${on?" sel":""}${nofit?" nofit":""}" data-act="tal" data-n="${esc(t.name)}" aria-pressed="${on}" ${nofit?`aria-disabled="true" title="Pas assez de points (${TALENT_POINTS-cost} restant${TALENT_POINTS-cost>1?"s":""})"`:""}>
         <div class="icw">${ic(t.name,"lg")}<span class="badge">${fr(t.pct)} %</span></div>
-        <div class="tx"><div class="nm">${esc(t.name)}</div><div class="cnt">${t.cost?`coût ${t.cost} · `:""}${on?"<b>choisi</b>":"cliquer pour choisir"}</div></div></button>`}).join("")}</div>
-      <p class="note">Clique sur un talent pour l'ajouter ou le retirer. Le pourcentage rappelle la part du top 30 qui le prend.</p>
+        <div class="tx"><div class="nm">${esc(t.name)}</div><div class="cnt">${t.cost?`coût ${t.cost} · `:""}${on?"<b>choisi</b>":nofit?"pas assez de points":"cliquer pour choisir"}</div></div></button>`}).join("")}</div>
+      <p class="note">Clique sur un talent pour l'ajouter ou le retirer, dans la limite de ${TALENT_POINTS} points comme en jeu. Le pourcentage rappelle la part du top 30 qui le prend.</p>
     </section>
 
     <section class="panel">
@@ -587,7 +621,12 @@ function planClick(t){
   planUi.msg = "";
   if(act!=="del") planUi.del = false;
   switch(act){
-    case "tal": B.talents = B.talents.includes(n) ? B.talents.filter(x=>x!==n) : B.talents.concat(n); break;
+    case "tal": {
+      if(B.talents.includes(n)){ B.talents = B.talents.filter(x=>x!==n); break; }
+      const tl = talentList(DATA.heroes[hero].all), costOf = x => (tl.find(t=>t.name===x)||{}).cost || 0;
+      const used = B.talents.reduce((s,x)=>s+costOf(x),0);
+      if(used + costOf(n) > TALENT_POINTS){ flash(`Limite de ${TALENT_POINTS} points atteinte : retire un talent d'abord`); return; }
+      B.talents = B.talents.concat(n); break; }
     case "gem": B.gems[t.dataset.k] = +t.dataset.i; break;
     case "inc": case "dec": { const g = B[t.dataset.g]; const v = Math.max(0, Math.min(8, (g[n]||0) + (act==="inc"?1:-1))); if(v) g[n]=v; else delete g[n]; break; }
     case "leg": B.legendary = B.legendary===n ? "" : n; break;
@@ -646,6 +685,34 @@ document.addEventListener("click", e => {
   const c = e.target.closest(".chip"); if(c){ enc = c.dataset.e; render(); }
 });
 window.addEventListener("hashchange", () => select(decodeURIComponent(location.hash.slice(1))));
+
+// Infobulle des icones + ouverture de la fiche fellows.gg au clic
+const tipEl = document.createElement("div"); tipEl.id = "tip"; tipEl.hidden = true; tipEl.setAttribute("role","tooltip"); document.body.appendChild(tipEl);
+function showTip(el){
+  const name = el.dataset.tip, info = tipInfo(name), url = el.dataset.url;
+  tipEl.innerHTML = `<div class="tt-h">${esc(name)}</div>${info.type?`<div class="tt-t">${info.type}</div>`:""}${
+    info.lines.filter(Boolean).map(l=>`<div>${l}</div>`).join("")}${url?`<div class="tt-l">Clic : description complète sur fellows.gg ↗</div>`:""}`;
+  tipEl.hidden = false;
+  const r = el.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  let x = r.left + r.width/2 - w/2, y = r.top - h - 8;
+  x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+  if(y < 8) y = r.bottom + 8;
+  tipEl.style.left = x + "px"; tipEl.style.top = y + "px";
+}
+const hideTip = () => { tipEl.hidden = true; };
+document.addEventListener("mouseover", e => { const el = e.target.closest(".ic[data-tip]"); if(el) showTip(el); else if(!e.target.closest("#tip")) hideTip(); });
+document.addEventListener("focusin", e => { const el = e.target.closest(".ic[data-tip]"); if(el) showTip(el); });
+document.addEventListener("focusout", hideTip);
+window.addEventListener("scroll", hideTip, {passive:true});
+function openFiche(el){ const a = document.createElement("a"); a.href = el.dataset.url; a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }
+document.addEventListener("click", e => {
+  const el = e.target.closest(".ic[data-url]"); if(!el) return;
+  e.preventDefault(); e.stopPropagation(); hideTip(); openFiche(el);
+}, true);
+document.addEventListener("keydown", e => {
+  const el = e.target.closest && e.target.closest(".ic[data-url]");
+  if(el && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); e.stopPropagation(); openFiche(el); }
+}, true);
 
 (function init(){
   const d = new Date(DATA.generated);
