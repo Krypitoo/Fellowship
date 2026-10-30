@@ -89,18 +89,21 @@ td.n small{color:var(--mute)}
 .ic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .ic.lg{width:40px;height:40px;font-size:13px;margin:0}
 .nmc{display:inline-flex;align-items:center}
-.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
-.tile{display:grid;grid-template-columns:40px minmax(0,1fr);gap:6px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
-.tile .track{grid-column:1/-1;height:5px}
-.tile .nm{font-size:14px;line-height:1.25;overflow-wrap:anywhere}
-.tile .cnt{font:12px var(--mono);color:var(--mute)} .tile .cnt b{color:var(--ink);font-weight:500}
-.tile.core{border-color:var(--core);background:color-mix(in srgb,var(--core) 7%,var(--panel))}
-.tile.core .nm{font-weight:600} .tile.core .fill{background:var(--core)}
+.heat .ic{width:29px;height:29px;font-size:11px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.tile{--h:0;display:flex;align-items:center;gap:14px;padding:8px;border:1px solid color-mix(in srgb,var(--core) calc(var(--h)*80%),var(--line));border-radius:8px;background:color-mix(in srgb,var(--core) calc(var(--h)*38%),var(--panel))}
+.tile .icw{position:relative;flex:none}
+.tile .ic.lg{width:60px;height:60px;font-size:16px;border-radius:6px}
+.tile .badge{position:absolute;right:-6px;bottom:-6px;min-width:34px;padding:2px 5px;border-radius:5px;background:var(--ink);color:var(--panel);font:600 12px/1.2 var(--mono);text-align:center;box-shadow:0 0 0 2px var(--panel)}
+.tile .tx{min-width:0}
+.tile .nm{font-size:15px;line-height:1.25;overflow-wrap:anywhere}
+.tile .cnt{font:12px var(--mono);color:var(--mute);margin-top:2px} .tile .cnt b{color:var(--ink);font-weight:500}
+.tile.core .nm{font-weight:600}
 .range .mm{position:absolute;top:4px;height:2px;background:var(--mute);opacity:.6}
 .axis{display:grid;grid-template-columns:90px minmax(0,1fr) 120px;gap:10px}
 .ticks{position:relative;height:16px;font:11px var(--mono);color:var(--mute)}
 .ticks i{position:absolute;transform:translateX(-50%);font-style:normal}
-.ticks i:first-child{transform:none} .ticks i:last-child{transform:translateX(-100%)}
+.ticks i:first-child{transform:none}
 .statrow .v b{font:600 17px var(--mono);color:var(--ink)}
 table.other{margin-top:14px}
 .other td.n b{font-weight:600}
@@ -210,16 +213,16 @@ function render(){
   <div class="grid">
     <section class="panel full">
       <h2>Talents</h2>
-      <div class="tgrid">${A.talents.map(x=>`<div class="tile${x.pct>=50?" core":""}">${ic(x.name,"lg")}
-        <div class="tx"><div class="nm">${esc(x.name)}</div><div class="cnt"><b>${x.n}</b> sélection${x.n>1?"s":""} · ${P(x.pct)}</div></div>
-        <div class="track"><div class="fill" style="width:${x.pct}%"></div></div></div>`).join("")}</div>
+      <div class="tgrid">${A.talents.map(x=>`<div class="tile${x.pct>=50?" core":""}" style="--h:${(x.pct/100).toFixed(2)}">
+        <div class="icw">${ic(x.name,"lg")}<span class="badge">${fr(x.pct)} %</span></div>
+        <div class="tx"><div class="nm">${esc(x.name)}</div><div class="cnt"><b>${x.n}</b> sélection${x.n>1?"s":""} sur ${A.n}</div></div></div>`).join("")}</div>
       <h3>Combinaisons complètes les plus jouées</h3><div class="cols">${combos(A.talentCombos)}</div>
-      <p class="note">En vert : talent pris par au moins la moitié des joueurs. Sélections = nombre de joueurs qui ont pris le talent, sur ${A.n}.</p>
+      <p class="note">Plus la case est verte, plus le talent est joué. Le pourcentage sur l'icône est la part des joueurs qui l'ont pris. Les talents que personne ne prend n'apparaissent pas.</p>
     </section>
 
     <section class="panel">
       <h2>Stats secondaires</h2>
-      <div class="axis"><span></span><div class="ticks">${[0,100,200,300].map(v=>`<i style="left:${v/STAT_MAX*100}%">${v}</i>`).join("")}<i style="left:100%">${STAT_MAX}</i></div><span></span></div>
+      <div class="axis"><span></span><div class="ticks">${[0,100,200,300].map(v=>`<i style="left:${v/STAT_MAX*100}%">${v}</i>`).join("")}</div><span></span></div>
       ${sec.map(s=>`<div class="statrow"><div>${s.label}</div>
         <div class="range" title="Min ${fr(s.min)} · zone courante ${fr(s.q1)} – ${fr(s.q3)} · max ${fr(s.max)}">
           <div class="mm" style="left:${sc(s.min)}%;width:${Math.max(sc(s.max)-sc(s.min),0.5)}%"></div>
@@ -253,8 +256,8 @@ function render(){
     <section class="panel full">
       <h2>Objets par emplacement</h2>
       <div class="scroll"><table class="slots"><tbody>${A.slots.map(s=>`<tr><td>${s.slot}</td><td>${
-        s.items.map(i=>`<span class="it${i.pct>=50?" maj":""}">${esc(i.name)}<span class="p">${P(i.pct)}</span></span>`).join("")}</td></tr>`).join("")}</tbody></table></div>
-      <p class="note">Pourcentage de joueurs qui portent l'objet. Encadré vert : objet incontournable (au moins 50 %).</p>
+        s.items.map(i=>`<span class="it${i.pct>=40?" maj":""}">${esc(i.name)}<span class="p">${P(i.pct)}</span></span>`).join("")}</td></tr>`).join("")}</tbody></table></div>
+      <p class="note">Pourcentage de joueurs qui portent l'objet. Encadré vert : objet porté par au moins 40 % des joueurs.</p>
     </section>
 
     <section class="panel">
