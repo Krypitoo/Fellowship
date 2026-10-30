@@ -239,7 +239,7 @@ def aggregate(builds):
         ench_pb.append(en)
         bless_pb.append(bl)
     traits = []
-    for name, c in trait_pres.most_common(14):
+    for name, c in trait_pres.most_common(40):
         vals = [d[name] for d in traits_pb if d.get(name, 0) > 0]
         levels = [d.get(name, 0) for d, pr in zip(traits_pb, present_pb) if name in pr]
         traits.append({"name": name, "pct": pct(c, n), "n": c, "median": r1(med(vals)),

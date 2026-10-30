@@ -99,6 +99,10 @@ td.n small{color:var(--mute)}
 .tile .nm{font-size:15px;line-height:1.25;overflow-wrap:anywhere}
 .tile .cnt{font:12px var(--mono);color:var(--mute);margin-top:2px} .tile .cnt b{color:var(--ink);font-weight:500}
 .tile.core .nm{font-weight:600}
+.tgrid.game{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.tgrid.game{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.tgrid.game{grid-template-columns:minmax(0,1fr)}}
+.tile.none{opacity:.55}
 .range .mm{position:absolute;top:4px;height:2px;background:var(--mute);opacity:.6}
 .axis{display:grid;grid-template-columns:90px minmax(0,1fr) 120px;gap:10px}
 .ticks{position:relative;height:16px;font:11px var(--mono);color:var(--mute)}
@@ -141,6 +145,34 @@ let hero = null, enc = "all";
 // Adresse des icones du jeu (a completer) ; vide = initiales a la place des icones
 const ICON_BASE = "https://assets.fellows.gg/static/icons/";
 const STAT_MAX = 350;
+// Aspects (le reste des traits a rang = sigils)
+const ASPECTS = ["Amethyst Splinters","Brave Machinations","Diamond Strike","Emerald Judgement",
+  "Martial Initiative","Ruby Storm","Visions of Grandeur","Sapphire Aurastone"];
+const isAspect = n => ASPECTS.some(a => a.toLowerCase() === n.toLowerCase());
+// Disposition des talents comme dans le jeu : [nom, cout], ligne par ligne, 3 par ligne
+const TALENT_LAYOUT = {
+  "Aeona": [["Entropic Burst", 2], ["Erasure", 2], ["Uchronia", 2], ["Chrona Tap", 1], ["Quickening", 1], ["Kind Rewind", 1], ["Hastening Doom", 2], ["Synchronicity", 2], ["Edge of Ruin", 2], ["Surging Chrona", 1], ["Temporal Shift", 1], ["Resonant Fate", 1], ["Paradoxical Twist", 3], ["Oblivion's Embrace", 3], ["Continuum Shift", 3], ["Karmic Dispersion", 1], ["Echoes of Divinity", 1], ["Vestige of Eternity", 1]],
+  "Ardeos": [["Slow Burn", 2], ["Frog Squad", 2], ["Great Balls of Fire", 2], ["Backdraft", 1], ["Flare up", 1], ["Apocalyptic Surge", 1], ["Agonizing Blaze", 2], ["Firestarter", 2], ["Undying Flame", 2], ["Cascading Inferno", 1], ["Crash and Burn", 1], ["Crackling Inferno", 1], ["Rolling Flames", 3], ["Pyrophibian Frenzy", 3], ["Reign of Fire", 3], ["Burning Initiative", 1], ["Intensifying Inferno", 1], ["Spontaneous Combustion", 1]],
+  "Elarion": [["Focused Expanse", 2], ["Piercing Seekers", 2], ["Resurgent Winds", 2], ["Deadly Focus", 1], ["Fusillade", 1], ["Skyward Munitions", 1], ["Repeating Stars", 2], ["Lunar Fury", 2], ["Lethal Shots", 2], ["Rising Moon", 1], ["Lunarlight Affinity", 1], ["Striker's Aim", 1], ["Fervent Supremacy", 3], ["Impending Heartseeker", 3], ["Final Crescendo", 3], ["Last Lights", 1], ["Swift Reload", 1], ["Skylit Grace", 1]],
+  "Gunde": [["Death's Arc", 2], ["Raven's Precision", 2], ["Grim Harvest", 2], ["Sundered Flesh", 1], ["Crimson strikes", 1], ["Deep Rend", 1], ["Darkening Hearts", 2], ["Murder of Crows", 2], ["Massacre", 2], ["Slayer's Grin", 1], ["Frenzied Reign", 1], ["Bloodbath", 1], ["Bloodcraze", 3], ["Oathshatter", 3], ["Carnage", 3], ["Superior Serration", 1], ["Ancestral Instinct", 1], ["Harvester's Toll", 1]],
+  "Helena": [["The Best Defense", 2], ["Shield Mastery", 2], ["Sword & Board", 2], ["Lingering Rush", 1], ["Guarded Veteran", 1], ["Punishing Strikes", 1], ["Aftershock", 2], ["Sharpened Blade", 2], ["Unscarred Soul", 2], ["High Command", 1], ["Defiance", 1], ["Skull Cracker", 1], ["Second Wind", 3], ["Martial Command", 3], ["Gleaming Shield", 3], ["Front Line Defender", 1], ["Master of War", 1], ["Greater Shockwave", 1]],
+  "Mara": [["Red Ledger", 2], ["Corrosive Spill", 2], ["Assassin's Guile", 2], ["Bloodrush", 1], ["Venomous Delight", 1], ["Efficient Killer", 1], ["Gushing Blood", 2], ["Feed the Queen", 2], ["Deadly Scheme", 2], ["Macabre Stratagem", 1], ["Maiden's Doom", 1], ["Seething Burst", 1], ["Hemotoxin", 3], ["Sinner's Pride", 3], ["Malevolence", 3], ["Arachnid Onslaught", 1], ["Caustic Wounds", 1], ["Puncture", 1]],
+  "Meiko": [["Resonance of Earth", 2], ["Stone Guard", 2], ["Earthwell", 2], ["Perfect Storm", 1], ["Will of Stone", 1], ["Whipping Apex", 1], ["Debilitating Vortex", 2], ["Guardian's Fluidity", 2], ["Harsh Winds", 2], ["Slipstream", 1], ["Earthbourne", 1], ["Harmonic Residual", 1], ["Warden of the Temple", 3], ["Shattering Obelisk", 3], ["Forbidden Technique", 3], ["Peacefield", 1], ["Rumbling Stone", 1], ["Conclusive Strikes", 1]],
+  "Rime": [["Avalanche", 2], ["Coalescing Frost", 2], ["Glacial Assault", 2], ["Cold Shower", 1], ["Chilling Finesse", 1], ["Burstbolter", 1], ["Cascading Blitz", 2], ["Harrowing Ice", 2], ["Icy Flow", 2], ["Bursting Swallows", 1], ["Greater Glacial Blast", 1], ["Navir's Keeper", 1], ["Icy Talons", 3], ["Frostweaver's Wrath", 3], ["Soulfrost Torrent", 3], ["Biting Cold", 1], ["Supreme Torrent", 1], ["Wisdom of the North", 1]],
+  "Sylvie": [["Nettle to the Petal", 2], ["Synchronized Fluttering", 2], ["Verdant Restoration", 2], ["Bloomin' Boomshrooms", 1], ["Natural Knowledge", 1], ["Every Other Flutter", 1], ["Symbiosis", 2], ["Saving Grace", 2], ["Shimmering Wings", 2], ["Sprouting Nettles", 1], ["Nurtured Haven", 1], ["Bluey's Gambit", 1], ["Natural Protector", 3], ["Flutterswift", 3], ["Flower Power", 3], ["Rowdy Rootsap", 1], ["Trailing Restoration", 1], ["In Bloom", 1]],
+  "Tariq": [["Left Hand Path", 2], ["Ride the Lightning", 2], ["Square Hammer", 2], ["High Road", 1], ["Blood & Thunder", 1], ["Bloodline", 1], ["The Motherload", 2], ["Mouth for War", 2], ["Thunderstruck", 2], ["Pneuma", 1], ["Sledgehammer", 1], ["Far Beyond Driven", 1], ["Kill Em All", 3], ["Ace of Spades", 3], ["Schism", 3], ["Them Bones", 1], ["Crack the Sky", 1], ["Killing in the Name", 1]],
+  "Vigour": [["Master of Triage", 2], ["Enduring Light", 2], ["Radiant Soul", 2], ["Alacritous Healing", 1], ["Ruptured Soul", 1], ["Expansive Mind", 1], ["Sacred Barrier", 2], ["Ceremony of Light", 2], ["Dawn Strider", 2], ["Enlightened Soul", 1], ["Shining Blast", 1], ["Greater Renewal", 1], ["Grand Proliferation", 3], ["Ascending Avatar", 3], ["Meticulous Runesmith", 3], ["Divine Light", 1], ["Runic Revelations", 1], ["Beacon in the Dark", 1]],
+  "Xavian": [["Sun's Touch", 2], ["Grand Halo", 2], ["Solar Burn", 2], ["Tempered Descent", 1], ["Light's Oath", 1], ["Rising Sun", 1], ["Imposing Presence", 2], ["Celestial Favor", 2], ["Gleaming Strikes", 2], ["Sun's Verdict", 1], ["Magic Ward", 1], ["Hallowed Shield", 1], ["Vanguard of Vengeance", 3], ["Invictus", 3], ["Golden Hour", 3], ["Zenith Technique", 1], ["Healing Halo", 1], ["Shifting Spectrum", 1]],
+};
+function talentList(A){
+  const lay = TALENT_LAYOUT[hero];
+  if(!lay) return A.talents;
+  const by = new Map(A.talents.map(t => [t.name.toLowerCase(), t]));
+  const seen = new Set();
+  const out = lay.map(([name, cost]) => { const t = by.get(name.toLowerCase()); if(t) seen.add(t.name);
+    return t ? {...t, cost} : {name, cost, n:0, pct:0}; });
+  return out.concat(A.talents.filter(t => !seen.has(t.name)));   // talent absent de la liste : a la fin
+}
 function initials(n){ const w=n.replace(/^The /,"").split(/[\s'/-]+/).filter(Boolean); return (w[0]?.[0]||"")+(w[1]?.[0]||""); }
 function ic(name, cls=""){
   const f = (DATA.icons||{})[name];
@@ -213,11 +245,11 @@ function render(){
   <div class="grid">
     <section class="panel full">
       <h2>Talents</h2>
-      <div class="tgrid">${A.talents.map(x=>`<div class="tile${x.pct>=50?" core":""}" style="--h:${(x.pct/100).toFixed(2)}">
+      <div class="tgrid${TALENT_LAYOUT[hero]?" game":""}">${talentList(A).map(x=>`<div class="tile${x.pct>=50?" core":""}${x.n?"":" none"}" style="--h:${(x.pct/100).toFixed(2)}">
         <div class="icw">${ic(x.name,"lg")}<span class="badge">${fr(x.pct)} %</span></div>
-        <div class="tx"><div class="nm">${esc(x.name)}</div><div class="cnt"><b>${x.n}</b> sélection${x.n>1?"s":""} sur ${A.n}</div></div></div>`).join("")}</div>
+        <div class="tx"><div class="nm">${esc(x.name)}</div><div class="cnt"><b>${x.n}</b> sélection${x.n>1?"s":""} sur ${A.n}${x.cost?` · coût ${x.cost}`:""}</div></div></div>`).join("")}</div>
       <h3>Combinaisons complètes les plus jouées</h3><div class="cols">${combos(A.talentCombos)}</div>
-      <p class="note">Plus la case est verte, plus le talent est joué. Le pourcentage sur l'icône est la part des joueurs qui l'ont pris. Les talents que personne ne prend n'apparaissent pas.</p>
+      <p class="note">Plus la case est verte, plus le talent est joué. Le pourcentage sur l'icône est la part des joueurs qui l'ont pris.${TALENT_LAYOUT[hero]?" Cases dans l'ordre du jeu.":" Ordre du jeu pas encore renseigné pour ce héros : talents triés du plus au moins joué, ceux que personne ne prend n'apparaissent pas."}</p>
     </section>
 
     <section class="panel">
@@ -242,15 +274,27 @@ function render(){
     </section>
 
     <section class="panel">
-      <h2>Traits (arme + objets)</h2>
-      ${heatTable(A.traits,"Trait")}
-      <p class="note">Colonnes : rang total du trait sur l'équipement, et nombre de builds à ce rang. « arme » : trait actif uniquement via l'arbre de l'arme. Médiane calculée sur les builds qui portent le trait.</p>
+      <h2>Aspects</h2>
+      ${heatTable(A.traits.filter(x=>isAspect(x.name)),"Aspect")}
+      <p class="note">Colonnes : rang total sur l'équipement, et nombre de builds à ce rang. « arme » : actif uniquement via l'arbre de l'arme. Médiane calculée sur les builds qui le portent.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Sigils</h2>
+      ${heatTable(A.traits.filter(x=>!isAspect(x.name)),"Sigil")}
+      <p class="note">Même lecture que pour les aspects.</p>
     </section>
 
     <section class="panel">
       <h2>Bénédictions</h2>
       ${heatTable(A.blessings,"Bénédiction")}
       <p class="note">Colonnes : niveau total de la bénédiction sur l'équipement, et nombre de builds à ce niveau.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Enchantements</h2>
+      ${levelTable(A.enchants,"Might / Guille / Cunning")}
+      <p class="note">Total = somme des rangs sur tout l'équipement. Zone courante = la moitié des joueurs.</p>
     </section>
 
     <section class="panel full">
@@ -272,12 +316,6 @@ function render(){
       <h2>Cou</h2>
       ${bars(A.neck,{icon:true})}
       <h3>Combinaisons</h3>${combos(A.neckCombos)}
-    </section>
-
-    <section class="panel full">
-      <h2>Enchantements</h2>
-      ${levelTable(A.enchants,"Might / Guille / Cunning")}
-      <p class="note">Total = somme des rangs sur tout l'équipement. Zone courante = la moitié des joueurs.</p>
     </section>
   </div>`;
 }
