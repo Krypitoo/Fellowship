@@ -1,0 +1,30 @@
+name: Exploration API (ponctuelle)
+on:
+  workflow_dispatch:
+  push:
+    paths: [outils/explorer.py]
+permissions:
+  contents: write
+concurrency:
+  group: mise-a-jour
+  cancel-in-progress: false
+jobs:
+  explorer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Exploration
+        env:
+          FELLOWSHIP_CLIENT_ID: ${{ secrets.FELLOWSHIP_CLIENT_ID }}
+          FELLOWSHIP_CLIENT_SECRET: ${{ secrets.FELLOWSHIP_CLIENT_SECRET }}
+        run: python outils/explorer.py
+      - name: Sauvegarde du resultat
+        if: always()
+        run: |
+          git config user.name "maj-auto"; git config user.email "maj-auto@users.noreply.github.com"
+          git add outils/exploration.json || true
+          git diff --cached --quiet || git commit -m "Resultat exploration API"
+          git pull --rebase; git push
