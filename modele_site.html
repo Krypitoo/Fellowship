@@ -302,6 +302,8 @@ const FG_TYPES = {2:"talent", 3:"weapon-trait", 4:"blessing"};
 const slug = n => n.toLowerCase().replace(/['’]/g,"").replace(/&/g,"and").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 function fellowsUrl(name){
   const L = DATA.links || {}; if(L[name]) return L[name];
+  const it = heroItems()[name];
+  if(it && it.id) return `https://fellows.gg/item/${it.id}/${slug(name)}?hero=${encodeURIComponent(hero)}`;
   const ids = DATA.ids || {}; let id = ids[name];
   if(id == null){ const k = Object.keys(ids).find(x => x.toLowerCase() === name.toLowerCase()); if(k) id = ids[k]; }
   const kind = id ? FG_TYPES[Math.floor(id / 1000000)] : null;
