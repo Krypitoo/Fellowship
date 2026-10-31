@@ -82,12 +82,46 @@ def parse_talent_list(text):
     return out
 
 
+SLOT_WORDS = {"Weapon", "Relic", "Head", "Neck", "Shoulders", "Back", "Chest", "Wrists", "Hands",
+              "Waist", "Feet", "Ring", "Trinket", "Orb", "Off Hand", "Shield"}
+
+
+def parse_items(text):
+    """Fiches d'objets : "Nom", "Weapon", caracteristiques, "Ability: Effet", description de l'effet.
+    Donne la description de l'effet, et celle de l'objet (titre de l'effet + description)."""
+    lines = [l.rstrip() for l in text.splitlines()]
+    out, item, i = {}, None, 0
+    while i < len(lines):
+        l = norm(lines[i])
+        if i + 1 < len(lines) and norm(lines[i + 1]) in SLOT_WORDS and l and not l.startswith("+"):
+            item = l; i += 2; continue
+        m = re.match(r"^Ability:\s*(.+)$", l)
+        if m:
+            eff, body, j = norm(m.group(1)), [], i + 1
+            while j < len(lines):
+                nx = norm(lines[j])
+                if j + 1 < len(lines) and norm(lines[j + 1]) in SLOT_WORDS and nx and not nx.startswith("+"):
+                    break
+                body.append(lines[j].strip()); j += 1
+            while body and not body[-1]:
+                body.pop()
+            desc = re.sub(r"\n{3,}", "\n\n", "\n".join(body)).strip()
+            if desc:
+                out[eff] = desc
+                if item:
+                    out[item] = f"{eff.upper()}\n\n{desc}"
+            item, i = None, j
+            continue
+        i += 1
+    return out
+
+
 def main():
     data = json.loads(DEST.read_text(encoding="utf-8")) if DEST.exists() else {}
     links = json.loads(LINKS.read_text(encoding="utf-8")) if LINKS.exists() else {}
     for f in sys.argv[1:]:
         txt = from_markdown(Path(f).read_text(encoding="utf-8"), links)
-        new = parse_talent_list(txt) or parse(txt)
+        new = parse_items(txt) or parse_talent_list(txt) or parse(txt)
         data.update(new)
         print(f"{f} : {len(new)} descriptions")
     DEST.write_text(json.dumps(dict(sorted(data.items())), ensure_ascii=False, indent=1), encoding="utf-8")
