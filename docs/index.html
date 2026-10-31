@@ -28,6 +28,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
 .bar .wrap{display:flex;align-items:center;gap:16px;padding-block:10px;flex-wrap:wrap}
+.themebtn{font:500 13px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap;margin-left:auto}
+.themebtn:hover{border-color:var(--accent)} .themebtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .brand{font:700 15px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;min-width:0;flex:1}
 .tab{font:500 14px var(--body);color:var(--ink);background:none;border:1px solid transparent;border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
@@ -219,6 +221,7 @@ footer{color:var(--mute);font-size:13px;padding-block:0 32px}
 <header class="bar"><div class="wrap">
   <div class="brand">Builds Fellowship</div>
   <nav class="tabs" id="tabs" aria-label="Héros"></nav>
+  <button type="button" class="themebtn" id="themeBtn" aria-label="Changer de thème"></button>
 </div></header>
 <main class="wrap" id="app"></main>
 <footer class="wrap" id="foot"></footer>
@@ -788,6 +791,21 @@ document.addEventListener("keydown", e => {
   const el = e.target.closest && e.target.closest(".ic[data-url]");
   if(el && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); e.stopPropagation(); openFiche(el); }
 }, true);
+
+// Theme : automatique (suit l'appareil), sombre ou clair ; choix garde dans ce navigateur
+const THEMES = [["auto","◐ Auto"],["dark","☾ Sombre"],["light","☀ Clair"]];
+function applyTheme(th){
+  if(th === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", th);
+  const b = document.getElementById("themeBtn"); const lab = (THEMES.find(x=>x[0]===th)||THEMES[0])[1];
+  if(b){ b.textContent = lab; b.title = "Thème : " + lab.slice(2) + " (cliquer pour changer)"; }
+}
+let theme = "auto"; try{ theme = localStorage.getItem("theme") || "auto"; }catch(e){}
+applyTheme(theme);
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const i = THEMES.findIndex(x=>x[0]===theme); theme = THEMES[(i+1) % THEMES.length][0];
+  try{ localStorage.setItem("theme", theme); }catch(e){} applyTheme(theme);
+});
 
 (function init(){
   const d = new Date(DATA.generated);
