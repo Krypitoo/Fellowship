@@ -161,6 +161,10 @@ td.n small{color:var(--mute)}
 #tip .tt-t{font:600 10.5px var(--body);letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
 #tip .tt-l{margin-top:6px;opacity:.75;font-size:12px}
 #tip.wide{max-width:340px}
+#tip .gb{font-size:12.5px} #tip .gb b,#tip .gbn b{font-family:var(--mono);display:inline-block;min-width:38px;opacity:.75}
+#tip .gbd{margin-top:6px;font-size:12.5px} #tip .gbd p{margin:2px 0 0 38px;opacity:.85}
+#tip .gbn{font-weight:600}
+.gtip{cursor:help}
 #tip .tt-i{font:12px var(--mono);opacity:.85;margin-bottom:4px}
 #tip .tt-a{display:flex;flex-wrap:wrap;gap:2px 10px;font:12px var(--mono);margin-bottom:4px}
 #tip .tt-s{margin-top:4px;opacity:.85}
@@ -229,6 +233,7 @@ const ICON_BASE = "https://assets.fellows.gg/static/icons/";
 const STAT_MAX = 350;
 const GEM_ORDER = ["Sapphire","Emerald","Ruby","Diamond","Topaz","Amethyst"];
 const TIER_LAB = ["< 125","125","625","1500"];
+const TIER_POW = [0, 125, 625, 1500];   // puissance minimale de chaque palier
 const LIGHT_GEMS = ["Diamond","Topaz"];   // couleurs claires : texte fonce
 const HERO_ORDER = ["Helena","Meiko","Xavian","Gunde","Tariq","Mara","Rime","Elarion","Ardeos","Sylvie","Vigour","Aeona"];
 const heroOrder = () => HERO_ORDER.concat(DATA.heroOrder.filter(h => !HERO_ORDER.includes(h)));
@@ -429,8 +434,8 @@ function render(){
       <h2>Gemmes</h2>
       ${A.gemTiers?`<div class="gtl"><span></span><div class="gleg">${TIER_LAB.map((l,i)=>`<span><i class="t${i}"></i>${l}</span>`).join("")}</div></div>
       ${GEM_ORDER.map(k=>{const tr=A.gemTiers[k]; if(!tr||!tr.slice(1).some(v=>v>0)) return ""; const top=tr.indexOf(Math.max(...tr));
-        return `<div class="grow"><div class="lab"><span class="dot" style="background:${GEM[k][1]}"></span>${GEM[k][0]}</div>
-        <div class="stack">${tr.map((v,i)=>v>0?`<div class="seg t${i}${LIGHT_GEMS.includes(k)?" lt":""}" style="width:${v}%;--c:${GEM[k][1]}" title="${TIER_LAB[i]} : ${fr(v)} % des joueurs">${v>=9?fr(v)+" %":""}</div>`:"").join("")}</div>
+        return `<div class="grow"><div class="lab gtip" data-gem="${k}" tabindex="0"><span class="dot" style="background:${GEM[k][1]}"></span>${GEM[k][0]}</div>
+        <div class="stack">${tr.map((v,i)=>v>0?`<div class="seg t${i}${LIGHT_GEMS.includes(k)?" lt":""}" style="width:${v}%;--c:${GEM[k][1]}" data-gem="${k}" data-pow="${TIER_POW[i]}" data-share="${v}">${v>=9?fr(v)+" %":""}</div>`:"").join("")}</div>
         <div class="v">${TIER_LAB[top]}</div></div>`}).join("")}
       <p class="note">Part des joueurs à chaque palier de puissance (moins de 125, 125, 625, 1500 et plus). À droite : le palier le plus fréquent.</p>`
       :`${A.gemPower.map(g=>`<div class="row"><div class="lab"><span class="dot" style="background:${GEM[g.key][1]}"></span>${GEM[g.key][0]}</div>
@@ -605,9 +610,9 @@ function renderPlan(){
     <section class="panel">
       <h2>Paliers de gemmes visés</h2>
       ${GEM_ORDER.map(k=>{const tr=A.gemTiers?A.gemTiers[k]:null; const v=B.gems[k]??0; const top=tr?tr.indexOf(Math.max(...tr)):-1; return `<div class="pgem">
-        <span class="lab"><span class="dot" style="background:${GEM[k][1]}"></span>${GEM[k][0]}</span>
-        <span class="tiers" role="group" aria-label="${GEM[k][0]}">${TIER_LAB.map((l,i)=>`<button type="button" data-act="gem" data-k="${k}" data-i="${i}" aria-pressed="${v===i}" style="--c:${GEM[k][1]}">${l}${i===top?"<i>★</i>":""}</button>`).join("")}</span></div>`}).join("")}
-      <p class="note">★ : palier le plus fréquent dans le top 30.</p>
+        <span class="lab gtip" data-gem="${k}" tabindex="0"><span class="dot" style="background:${GEM[k][1]}"></span>${GEM[k][0]}</span>
+        <span class="tiers" role="group" aria-label="${GEM[k][0]}">${TIER_LAB.map((l,i)=>`<button type="button" data-act="gem" data-k="${k}" data-i="${i}" data-gem="${k}" data-pow="${TIER_POW[i]}" aria-pressed="${v===i}" style="--c:${GEM[k][1]}">${l}${i===top?"<i>★</i>":""}</button>`).join("")}</span></div>`}).join("")}
+      <p class="note">★ : palier le plus fréquent dans le top 30. Survole un palier pour voir les bonus de gemmes qu'il active.</p>
     </section>
 
     <section class="panel">
@@ -735,7 +740,38 @@ function showTip(el){
   tipEl.style.left = x + "px"; tipEl.style.top = y + "px";
 }
 const hideTip = () => { tipEl.hidden = true; };
-document.addEventListener("mouseover", e => { const el = e.target.closest(".ic[data-tip]"); if(el) showTip(el); else if(!e.target.closest("#tip")) hideTip(); });
+// Bonus de gemmes actifs a une puissance donnee (les versions II remplacent les versions I)
+function gemActive(color, pow){
+  const list = ((DATA.gemBonus||{})[color] || []).filter(b => b.power <= pow);
+  const replaced = new Set(list.map(b => b.replaces).filter(Boolean));
+  return list.filter(b => !replaced.has(b.name));
+}
+function placeTip(el){
+  tipEl.hidden = false;
+  const r = el.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  let x = r.left + r.width/2 - w/2, y = r.top - h - 8;
+  x = Math.max(8, Math.min(x, window.innerWidth - w - 8)); if(y < 8) y = r.bottom + 8;
+  tipEl.style.left = x + "px"; tipEl.style.top = y + "px";
+}
+function showGemTip(el){
+  const k = el.dataset.gem, all = (DATA.gemBonus||{})[k]; if(!all) return;
+  const nm = GEM[k] ? GEM[k][0] : k;
+  tipEl.classList.add("wide");
+  if(el.dataset.pow === undefined){
+    tipEl.innerHTML = `<div class="tt-h">${nm}</div><div class="tt-t">Bonus par puissance de gemmes</div>${
+      all.map(b=>`<div class="gb"><b>${b.power}</b> ${esc(b.name)}</div>`).join("")}<div class="tt-l">Survole un palier pour le détail des bonus actifs.</div>`;
+  } else {
+    const pow = +el.dataset.pow, act = gemActive(k, pow), share = el.dataset.share;
+    tipEl.innerHTML = `<div class="tt-h">${nm} · ${pow ? "palier "+pow : "moins de 125"}</div>${share?`<div class="tt-t">${fr(+share)} % du top 30</div>`:""}${
+      act.length ? act.map(b=>`<div class="gbd"><div class="gbn"><b>${b.power}</b> ${esc(b.name)}</div>${fmtDesc(b.desc)}</div>`).join("")
+                 : `<div>Aucun bonus actif (le premier arrive à 80 de puissance).</div>`}`;
+  }
+  placeTip(el);
+}
+document.addEventListener("mouseover", e => {
+  const g = e.target.closest("[data-gem]"); if(g){ showGemTip(g); return; }
+  const el = e.target.closest(".ic[data-tip]"); if(el) showTip(el); else if(!e.target.closest("#tip")) hideTip(); });
+document.addEventListener("focusin", e => { const g = e.target.closest("[data-gem]"); if(g) showGemTip(g); });
 document.addEventListener("focusin", e => { const el = e.target.closest(".ic[data-tip]"); if(el) showTip(el); });
 document.addEventListener("focusout", hideTip);
 window.addEventListener("scroll", hideTip, {passive:true});

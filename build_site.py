@@ -365,6 +365,9 @@ def render(data, out, fragment):
     desc_file = HERE / "descriptions.json"   # descriptions copiees depuis fellows.gg
     if desc_file.exists():
         data["desc"] = json.loads(desc_file.read_text(encoding="utf-8"))
+    gem_file = HERE / "gemmes.json"   # bonus de gemmes copies depuis fellows.gg
+    if gem_file.exists():
+        data["gemBonus"] = json.loads(gem_file.read_text(encoding="utf-8"))
     links_file = HERE / "liens_fellows.json"   # liens fellows.gg releves sur leurs pages
     if links_file.exists():
         data["links"] = json.loads(links_file.read_text(encoding="utf-8"))

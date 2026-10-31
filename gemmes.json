@@ -1,0 +1,374 @@
+{
+ "Amethyst": [
+  {
+   "name": "Sealed Fate",
+   "power": 80,
+   "desc": "Your Damage and Healing effects on characters with more than 50% health have +5% Critical Strike chance.",
+   "replaces": null
+  },
+  {
+   "name": "Berserker's Zeal",
+   "power": 150,
+   "desc": "+4 Stamina\n+8 Critical Strike",
+   "replaces": null
+  },
+  {
+   "name": "Reaper's Reprieve",
+   "power": 220,
+   "desc": "Each time an enemy that you dealt damage to dies, you gain Reaper's Reprieve, healing you for 12% of your Maximum Health over 18 seconds.",
+   "replaces": null
+  },
+  {
+   "name": "Killer Instinct",
+   "power": 300,
+   "desc": "+2% Critical Strike chance.",
+   "replaces": null
+  },
+  {
+   "name": "Blessing of the Deathdealer",
+   "power": 450,
+   "desc": "Your Critical Strikes do 2% more Damage and Healing.",
+   "replaces": null
+  },
+  {
+   "name": "Sealed Fate - II",
+   "power": 600,
+   "desc": "Your Damage and Healing effects on characters with more than 50% health have +15% Critical Strike chance.",
+   "replaces": "Sealed Fate"
+  },
+  {
+   "name": "Berserker's Zeal - II",
+   "power": 800,
+   "desc": "+12 Stamina\n+24 Critical Strike",
+   "replaces": "Berserker's Zeal"
+  },
+  {
+   "name": "Reaper's Reprieve - II",
+   "power": 1000,
+   "desc": "Each time an enemy that you dealt damage to dies, you gain Reaper's Reprieve - II, healing you for 36% of your Maximum Health over 18 seconds.",
+   "replaces": "Reaper's Reprieve"
+  },
+  {
+   "name": "Killer Instinct - II",
+   "power": 1250,
+   "desc": "+6% Critical Strike chance.",
+   "replaces": "Killer Instinct"
+  },
+  {
+   "name": "Blessing of the Deathdealer - II",
+   "power": 1500,
+   "desc": "Your Critical Strikes do 6% more Damage and Healing.",
+   "replaces": "Blessing of the Deathdealer"
+  }
+ ],
+ "Diamond": [
+  {
+   "name": "Harmonious Soul",
+   "power": 80,
+   "desc": "Each time an enemy you are in combat with is defeated, you gain +0.6% Critical Strike, Haste, Expertise, and Spirit for 5 seconds, stacking up to 4 times.\n\nWhen the duration of Harmonious Soul expires, you lose 1 stack.",
+   "replaces": null
+  },
+  {
+   "name": "Stoic's Teachings",
+   "power": 150,
+   "desc": "+40 Armor\n+4 Strength / Intellect / Agility",
+   "replaces": null
+  },
+  {
+   "name": "Tranquil Resolve",
+   "power": 220,
+   "desc": "When you take Magic Damage you gain Tranquil Resolve, reducing all Magic Damage you take by 8% for 6 seconds.\n\nThis effect cannot occur more than once every 20 seconds.",
+   "replaces": null
+  },
+  {
+   "name": "Ancient's Wisdom",
+   "power": 300,
+   "desc": "+2% Strength / Intellect / Agility",
+   "replaces": null
+  },
+  {
+   "name": "Blessing of the Artisan",
+   "power": 450,
+   "desc": "Your Relic cooldowns are reduced by 8%.",
+   "replaces": null
+  },
+  {
+   "name": "Harmonious Soul - II",
+   "power": 600,
+   "desc": "Each time an enemy you are in combat with is defeated, you gain +0.6% Critical Strike, Haste, Expertise, and Spirit for 5 seconds, stacking up to 12 times.\n\nWhen the duration of Harmonious Soul - II expires, you lose 1 stack.",
+   "replaces": "Harmonious Soul"
+  },
+  {
+   "name": "Stoic's Teachings - II",
+   "power": 800,
+   "desc": "+120 Armor\n+12 Strength / Intellect / Agility",
+   "replaces": "Stoic's Teachings"
+  },
+  {
+   "name": "Tranquil Resolve - II",
+   "power": 1000,
+   "desc": "When you take Magic Damage you gain Tranquil Resolve - II, reducing all Magic Damage you take by 24% for 6 seconds.\n\nThis effect cannot occur more than once every 20 seconds.",
+   "replaces": "Tranquil Resolve"
+  },
+  {
+   "name": "Ancient's Wisdom - II",
+   "power": 1250,
+   "desc": "+6% Strength / Intellect / Agility",
+   "replaces": "Ancient's Wisdom"
+  },
+  {
+   "name": "Blessing of the Artisan - II",
+   "power": 1500,
+   "desc": "Your Relic cooldowns are reduced by 24%.",
+   "replaces": "Blessing of the Artisan"
+  }
+ ],
+ "Emerald": [
+  {
+   "name": "First Strike",
+   "power": 80,
+   "desc": "+5% Expertise for 15 seconds when dealing damage to any enemy for the first time.",
+   "replaces": null
+  },
+  {
+   "name": "Vanguard's Resolve",
+   "power": 150,
+   "desc": "+4 Stamina\n+8 Expertise",
+   "replaces": null
+  },
+  {
+   "name": "Sentinel's Bastion",
+   "power": 220,
+   "desc": "Every 60 seconds, you gain a shield that absorbs damage equal to 5% of your Maximum Health. The shield lasts for 60 seconds. Damage dealt to the shield is reduced by 50%.",
+   "replaces": null
+  },
+  {
+   "name": "Tactician's Accumen",
+   "power": 300,
+   "desc": "+2% Expertise",
+   "replaces": null
+  },
+  {
+   "name": "Blessing of the Commander",
+   "power": 450,
+   "desc": "4% Ability Cooldown reduction",
+   "replaces": null
+  },
+  {
+   "name": "First Strike - II",
+   "power": 600,
+   "desc": "+15% Expertise for 15 seconds when dealing damage to any enemy for the first time.",
+   "replaces": "First Strike"
+  },
+  {
+   "name": "Vanguard's Resolve - II",
+   "power": 800,
+   "desc": "+12 Stamina\n+24 Expertise",
+   "replaces": "Vanguard's Resolve"
+  },
+  {
+   "name": "Sentinel's Bastion - II",
+   "power": 1000,
+   "desc": "Every 60 seconds, you gain a shield that absorbs damage equal to 15% of your Maximum Health. The shield lasts for 60 seconds. Damage dealt to the shield is reduced by 50%.",
+   "replaces": "Sentinel's Bastion"
+  },
+  {
+   "name": "Tactician's Accumen - II",
+   "power": 1250,
+   "desc": "+6% Expertise",
+   "replaces": "Tactician's Accumen"
+  },
+  {
+   "name": "Blessing of the Commander - II",
+   "power": 1500,
+   "desc": "+12% Ability Cooldown reduction",
+   "replaces": "Blessing of the Commander"
+  }
+ ],
+ "Ruby": [
+  {
+   "name": "Might of the Minotaur",
+   "power": 80,
+   "desc": "+2% Strength / Intellect / Agility while you are above 80% health.",
+   "replaces": null
+  },
+  {
+   "name": "Champion's Heart",
+   "power": 150,
+   "desc": "+6 Stamina\n+2 Strength / Intellect / Agility",
+   "replaces": null
+  },
+  {
+   "name": "Unyielding Vitality",
+   "power": 220,
+   "desc": "You heal for 0.7% of your Maximum Health every 2 seconds while in combat.",
+   "replaces": null
+  },
+  {
+   "name": "Titan's Blood",
+   "power": 300,
+   "desc": "+3% Stamina",
+   "replaces": null
+  },
+  {
+   "name": "Blessing of the Conqueror",
+   "power": 450,
+   "desc": "While in combat with a boss your Damage, Healing, and Absorption is increased by 5%.",
+   "replaces": null
+  },
+  {
+   "name": "Might of the Minotaur - II",
+   "power": 600,
+   "desc": "+6% Strength / Intellect / Agility while you are above 80% health.",
+   "replaces": "Might of the Minotaur"
+  },
+  {
+   "name": "Champion's Heart - II",
+   "power": 800,
+   "desc": "+18 Stamina\n+6 Strength / Intellect / Agility",
+   "replaces": "Champion's Heart"
+  },
+  {
+   "name": "Unyielding Vitality - II",
+   "power": 1000,
+   "desc": "You heal for 2.1% of your Maximum Health every 2 seconds while in combat.",
+   "replaces": "Unyielding Vitality"
+  },
+  {
+   "name": "Titan's Blood - II",
+   "power": 1250,
+   "desc": "+9% Stamina",
+   "replaces": "Titan's Blood"
+  },
+  {
+   "name": "Blessing of the Conqueror - II",
+   "power": 1500,
+   "desc": "While in combat with a boss your Damage, Healing, and Absorption is increased by 15%.",
+   "replaces": "Blessing of the Conqueror"
+  }
+ ],
+ "Sapphire": [
+  {
+   "name": "Ancestral Surge",
+   "power": 80,
+   "desc": "Your maximum Spirit Points is increased by 10.\n\nWhile Spirit of Heroism is active, your Strength / Intellect / Agility is increased by 8%.",
+   "replaces": null
+  },
+  {
+   "name": "Mystic's Intuition",
+   "power": 150,
+   "desc": "+4 Stamina\n+8 Spirit",
+   "replaces": null
+  },
+  {
+   "name": "Resonating Soul",
+   "power": 220,
+   "desc": "For every 10% Health you are missing, all Damage you take is reduced by 1%.",
+   "replaces": null
+  },
+  {
+   "name": "Oracle's Foresight",
+   "power": 300,
+   "desc": "+2% Spirit",
+   "replaces": null
+  },
+  {
+   "name": "Blessing of the Prophet",
+   "power": 450,
+   "desc": "The cost of your Spirit Ability is reduced by 5%.\n\nThe duration of Spirit of Heroism is increased by 6 seconds.",
+   "replaces": null
+  },
+  {
+   "name": "Ancestral Surge - II",
+   "power": 600,
+   "desc": "Your maximum Spirit Points is increased by 30.\n\nWhile Spirit of Heroism is active, your Strength / Intellect / Agility is increased by 24%.",
+   "replaces": "Ancestral Surge"
+  },
+  {
+   "name": "Mystic's Intuition - II",
+   "power": 800,
+   "desc": "+12 Stamina\n+24 Spirit",
+   "replaces": "Mystic's Intuition"
+  },
+  {
+   "name": "Resonating Soul - II",
+   "power": 1000,
+   "desc": "For every 10% Health you are missing, all Damage you take is reduced by 3%.",
+   "replaces": "Resonating Soul"
+  },
+  {
+   "name": "Oracle's Foresight - II",
+   "power": 1250,
+   "desc": "+6% Spirit",
+   "replaces": "Oracle's Foresight"
+  },
+  {
+   "name": "Blessing of the Prophet - II",
+   "power": 1500,
+   "desc": "The cost of your Spirit Ability is reduced by 15%.\n\nThe duration of Spirit of Heroism is increased by 18 seconds.",
+   "replaces": "Blessing of the Prophet"
+  }
+ ],
+ "Topaz": [
+  {
+   "name": "Adrenaline Rush",
+   "power": 80,
+   "desc": "+3% Haste for 10 seconds each time you deal damage to or heal a character that has 30% or less health.",
+   "replaces": null
+  },
+  {
+   "name": "Thief's Alacrity",
+   "power": 150,
+   "desc": "+4 Stamina\n+8 Haste",
+   "replaces": null
+  },
+  {
+   "name": "Rogue's Resurgence",
+   "power": 220,
+   "desc": "When you are below 50% health you are instantly healed for 8% of your Maximum Health.\n\nThis effect can only occur once every 20 seconds.",
+   "replaces": null
+  },
+  {
+   "name": "Feline Grace",
+   "power": 300,
+   "desc": "+2% Haste",
+   "replaces": null
+  },
+  {
+   "name": "Blessing of the Virtuoso",
+   "power": 450,
+   "desc": "You retain +2% Haste from Spirit of Heroism while it is not active.",
+   "replaces": null
+  },
+  {
+   "name": "Adrenaline Rush - II",
+   "power": 600,
+   "desc": "+9% Haste for 10 seconds each time you deal damage to or heal a character that has 30% or less health.",
+   "replaces": "Adrenaline Rush"
+  },
+  {
+   "name": "Thief's Alacrity - II",
+   "power": 800,
+   "desc": "+12 Stamina\n+24 Haste",
+   "replaces": "Thief's Alacrity"
+  },
+  {
+   "name": "Rogue's Resurgence - II",
+   "power": 1000,
+   "desc": "When you are below 50% health you are instantly healed for 24% of your Maximum Health.\n\nThis effect can only occur once every 20 seconds.",
+   "replaces": "Rogue's Resurgence"
+  },
+  {
+   "name": "Feline Grace - II",
+   "power": 1250,
+   "desc": "+6% Haste",
+   "replaces": "Feline Grace"
+  },
+  {
+   "name": "Blessing of the Virtuoso - II",
+   "power": 1500,
+   "desc": "You retain +6% Haste from Spirit of Heroism while it is not active.",
+   "replaces": "Blessing of the Virtuoso"
+  }
+ ]
+}

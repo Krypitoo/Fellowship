@@ -10,6 +10,7 @@ on:
       - build_site.py
       - descriptions.json
       - liens_fellows.json
+      - gemmes.json
   workflow_dispatch:
 
 permissions:
