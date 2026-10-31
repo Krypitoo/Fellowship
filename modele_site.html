@@ -8,15 +8,17 @@
 :root{
   --bg:#eef1f4; --panel:#ffffff; --ink:#1b2430; --mute:#5d6878; --line:#d5dbe3;
   --accent:#2f6690; --accent-soft:#dbe7f1; --core:#1f7a52; --legend:#c46a12;
-  --track:#e3e8ee;
+  --track:#e3e8ee; --hmix:58%;
   --display:"Cinzel", "Trajan Pro", Georgia, serif;
   --body:"IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --hmix:100%;
   --bg:#11161d; --panel:#18202a; --ink:#e6ebf1; --mute:#93a0b1; --line:#2a3542;
   --accent:#6fa8d6; --accent-soft:#1f3346; --core:#4cc28a; --legend:#f0a050; --track:#243040; color-scheme:dark}}
 :root[data-theme="dark"]{
+  --hmix:100%;
   --bg:#11161d; --panel:#18202a; --ink:#e6ebf1; --mute:#93a0b1; --line:#2a3542;
   --accent:#6fa8d6; --accent-soft:#1f3346; --core:#4cc28a; --legend:#f0a050; --track:#243040; color-scheme:dark}
 *{box-sizing:border-box}
@@ -29,9 +31,12 @@ header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background
 .themebtn:hover{border-color:var(--accent)} .themebtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .brand{font:700 15px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;min-width:0;flex:1}
-.tab{font:500 14px var(--body);color:var(--ink);background:none;border:1px solid transparent;border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
-.tab:hover{background:var(--accent-soft)}
-.tab[aria-current="true"]{background:var(--accent);color:var(--panel)}
+/* Couleur de chaque heros (comme en jeu) : pure en theme sombre, assombrie en theme clair pour rester lisible */
+.tab,.hname{--hc:var(--ink);--hct:color-mix(in srgb,var(--hc) var(--hmix),#000)}
+.tab{font:600 14px var(--body);color:var(--hct);background:none;border:1px solid transparent;border-bottom:2px solid transparent;border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+.tab:hover{background:color-mix(in srgb,var(--hc) 12%,var(--panel))}
+.tab[aria-current="true"]{background:color-mix(in srgb,var(--hc) 20%,var(--panel));border-color:color-mix(in srgb,var(--hc) 45%,transparent);border-bottom-color:var(--hc)}
+.hname{color:var(--hct)}
 .tab:disabled{color:var(--mute);opacity:.55;cursor:default;background:none}
 .tab:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 main{padding-block:24px 48px}
@@ -234,6 +239,10 @@ let hero = null, enc = "all";
 // Adresse des icones du jeu (a completer) ; vide = initiales a la place des icones
 const ICON_BASE = "https://assets.fellows.gg/static/icons/";
 const STAT_MAX = 350;
+// Couleurs des heros, reprises de l'interface du jeu
+const HERO_COLORS = {Helena:"#d9783a", Meiko:"#33d35c", Xavian:"#3f9a62", Aeona:"#f095df", Sylvie:"#ea4a7e",
+  Vigour:"#f2f2f2", Ardeos:"#ea6424", Elarion:"#9259f2", Gunde:"#c23a3a", Mara:"#b462dc", Rime:"#1d9ae8", Tariq:"#4e76f0"};
+const heroColor = h => HERO_COLORS[h] || "var(--ink)";
 const GEM_ORDER = ["Sapphire","Emerald","Ruby","Diamond","Topaz","Amethyst"];
 const TIER_LAB = ["< 125","125","625","1500"];
 const TIER_POW = [0, 125, 625, 1500];   // puissance minimale de chaque palier
@@ -381,7 +390,7 @@ function heatTable(list, head){
 function renderTabs(){
   $("#tabs").innerHTML = heroOrder().map(h => {
     const ok = !!DATA.heroes[h];
-    return `<button class="tab" type="button" data-h="${esc(h)}" ${ok?"":"disabled title=\"Pas encore de données\""} aria-current="${h===hero}">${esc(h)}</button>`;
+    return `<button class="tab" type="button" style="--hc:${heroColor(h)}" data-h="${esc(h)}" ${ok?"":"disabled title=\"Pas encore de données\""} aria-current="${h===hero}">${esc(h)}</button>`;
   }).join("");
 }
 
@@ -397,7 +406,7 @@ function render(){
 
   $("#app").innerHTML = `
   <div class="hero-head">
-    <h1>${esc(hero)}</h1>${modeSwitch()}
+    <h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}
     <div class="meta">
       <span><b>${A.n}</b> builds</span>
       <span>${encLabel}</span>
@@ -566,7 +575,7 @@ function renderPlan(){
   const code = planUi.exp ? btoa(unescape(encodeURIComponent(JSON.stringify({v:1, hero, build:B})))) : "";
 
   $("#app").innerHTML = `
-  <div class="hero-head"><h1>${esc(hero)}</h1>${modeSwitch()}</div>
+  <div class="hero-head"><h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}</div>
   <section class="panel full planbar">
     <div class="pb-row">
       <label for="buildSel">Build</label>
