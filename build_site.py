@@ -315,6 +315,21 @@ def collect_icons(builds, icons, ids):
                     ids.setdefault(clean(t["name"]), t["id"])
 
 
+def collect_items(builds, items):
+    """Nom d'objet -> icone, numero, qualite, emplacement, niveau et caracteristiques (au plus haut niveau vu)."""
+    for b in builds:
+        for g in gear(b):
+            nm = clean(g["name"])
+            cur = items.get(nm)
+            if cur and cur["ilvl"] >= (g.get("itemLevel") or 0):
+                continue
+            items[nm] = {"icon": g.get("icon"), "id": g.get("id"), "q": g.get("quality"),
+                         "slot": SLOT_LABELS.get(g.get("slot"), "?"), "ilvl": g.get("itemLevel") or 0,
+                         "attrs": [[a["name"], a["value"]] for a in g.get("attributes") or []
+                                   if a.get("name") and a.get("value")],
+                         "socket": bool(g.get("hasGemSocket"))}
+
+
 def build_data(files):
     heroes, enc_names, icons, ids = {}, {}, {}, {}
     for f in files:
@@ -328,10 +343,12 @@ def build_data(files):
             if b.get("encounterName"):
                 enc_names[str(b["encounter"])] = b["encounterName"]
         collect_icons(builds, icons, ids)
+        items = {}
+        collect_items(builds, items)
         by_enc = defaultdict(list)
         for b in builds:
             by_enc[str(b["encounter"])].append(b)
-        heroes[hero] = {"all": aggregate(builds),
+        heroes[hero] = {"all": aggregate(builds), "items": items,
                         "byEncounter": {e: aggregate(bs) for e, bs in sorted(by_enc.items())}}
         print(f"{hero} : {len(builds)} builds, {len(by_enc)} donjon(s)")
 
