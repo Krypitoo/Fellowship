@@ -55,8 +55,10 @@ h1{font:700 clamp(30px,5vw,44px)/1.05 var(--display);margin:0;letter-spacing:.02
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;min-width:0}
 .panel.full{grid-column:1/-1}
 @media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
-h2{font:600 12px/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin:0 0 12px}
-h3{font:600 13px var(--body);margin:16px 0 6px;color:var(--mute)}
+/* Titres de section : police d'affichage, couleur du texte, filet qui file jusqu'au bord du panneau */
+h2{display:flex;align-items:center;gap:12px;font:700 17px/1.2 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin:-2px 0 14px}
+h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+h3{font:600 13.5px var(--body);margin:18px 0 8px;color:var(--ink);letter-spacing:.02em}
 .row{display:grid;grid-template-columns:minmax(0,1fr) 34% 52px;gap:10px;align-items:center;padding:3px 0}
 .row .lab{overflow-wrap:anywhere}
 .row.core .lab{font-weight:600}
@@ -112,7 +114,8 @@ td.n small{color:var(--mute)}
 .pb-box{display:grid;gap:6px} .pb-box label{font-size:13px;color:var(--mute)} .pb-box textarea{width:100%;font:12px var(--mono);resize:vertical} .pb-box .btn{justify-self:start}
 .pb-msg{margin:0;font-size:13.5px;color:var(--core);font-weight:600}
 .saved{font:12px var(--mono);color:var(--core);opacity:0;transition:opacity .2s} .saved.on{opacity:1}
-.h2x{font:500 12px var(--mono);letter-spacing:0;text-transform:none;color:var(--ink);margin-left:8px}
+.h2x{font:500 12px var(--mono);letter-spacing:0;text-transform:none;color:var(--mute);margin-left:0;order:2}
+h2 .h2x+*{order:3}
 .pick{font:inherit;color:inherit;text-align:left;cursor:pointer;background:var(--panel);--h:0}
 .pick:hover{border-color:var(--accent)}
 .pick.sel{border:2px solid var(--accent);background:var(--accent-soft);padding:7px}
@@ -246,6 +249,8 @@ const STAT_MAX = 350;
 // Couleurs des heros, reprises de l'interface du jeu
 const HERO_COLORS = {Helena:"#d9783a", Meiko:"#33d35c", Xavian:"#3f9a62", Aeona:"#f095df", Sylvie:"#ea4a7e",
   Vigour:"#f2f2f2", Ardeos:"#ea6424", Elarion:"#9259f2", Gunde:"#c23a3a", Mara:"#b462dc", Rime:"#1d9ae8", Tariq:"#4e76f0"};
+// Effets speciaux d'armes (ex. Fated Strike) : jamais classes comme sigils
+const isSpecial = n => Object.values(DATA.heroes).some(H => H.all.special.some(s => s.name === n));
 const heroColor = h => HERO_COLORS[h] || "var(--ink)";
 const GEM_ORDER = ["Sapphire","Emerald","Ruby","Diamond","Topaz","Amethyst"];
 const TIER_LAB = ["< 125","125","625","1500"];
@@ -467,7 +472,7 @@ function render(){
 
     <section class="panel">
       <h2>Sigils</h2>
-      ${heatTable(A.traits.filter(x=>!isAspect(x.name)),"Sigil")}
+      ${heatTable(A.traits.filter(x=>!isAspect(x.name) && !isSpecial(x.name)),"Sigil")}
       <p class="note">Même lecture que pour les aspects.</p>
     </section>
 
@@ -575,7 +580,7 @@ function renderPlan(){
   const refT = n => { const t=A.traits.find(x=>x.name===n); return t?`top 30 : ${P(t.pct)} · rang ${fr(t.median,t.median%1?1:0)}`:"peu joué"; };
   const refB = n => { const t=A.blessings.find(x=>x.name===n); return t?`top 30 : ${P(t.pct)} · niv. ${fr(t.median,t.median%1?1:0)}`:"peu joué"; };
   const traitNames = listWith(A.traits, Object.assign({}, B.aspects, B.sigils));
-  const asp = traitNames.filter(isAspect), sig = traitNames.filter(n=>!isAspect(n));
+  const asp = traitNames.filter(isAspect), sig = traitNames.filter(n=>!isAspect(n) && !isSpecial(n));
   const code = planUi.exp ? btoa(unescape(encodeURIComponent(JSON.stringify({v:1, hero, build:B})))) : "";
 
   $("#app").innerHTML = `
