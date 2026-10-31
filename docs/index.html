@@ -164,6 +164,11 @@ td.n small{color:var(--mute)}
 #tip .tt-t{font:600 10.5px var(--body);letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-bottom:4px}
 #tip .tt-l{margin-top:6px;opacity:.75;font-size:12px}
 #tip.wide{max-width:340px}
+#tip .tt-i{font:12px var(--mono);opacity:.85;margin-bottom:4px}
+#tip .tt-a{display:flex;flex-wrap:wrap;gap:2px 10px;font:12px var(--mono);margin-bottom:4px}
+#tip .tt-s{margin-top:4px;opacity:.85}
+.ic.sm{width:20px;height:20px;font-size:9px;margin-right:6px;vertical-align:-5px}
+.it .ic{opacity:1}
 #tip .tt-d p{margin:0 0 6px} #tip .tt-d p:last-child{margin:0}
 #tip .kw{font-weight:600;letter-spacing:.03em}
 #tip .tt-d p.kwh{margin:8px 0 2px;font:600 10.5px var(--body);letter-spacing:.08em;opacity:.8}
@@ -289,7 +294,9 @@ const EXTRA_ICONS = {
   "Sun's Verdict": "T_HolyFire_00.jpg",
 };
 const ICON_LC = {};
+const heroItems = () => (DATA.heroes[hero] && DATA.heroes[hero].items) || {};
 function iconFor(name){
+  const it = heroItems()[name]; if(it && it.icon) return it.icon;
   const all = Object.assign({}, EXTRA_ICONS, DATA.icons||{});
   if(!ICON_LC._ok){ for(const k in all) ICON_LC[k.toLowerCase()] = all[k]; ICON_LC._ok = true; }
   return all[name] || ICON_LC[name.toLowerCase()];
@@ -315,6 +322,15 @@ function tipInfo(name){
   if((x = find(A.blessings))) return {type:"Bénédiction", lines:[`Portée par ${P(x.pct)} du top 30`, `Niveau médian ${md(x.median)}`]};
   if((x = find(A.neck))) return {type:"Choix du cou", lines:[`Pris par ${P(x.pct)} du top 30`]};
   if((x = find(A.enchants))) return {type:"Enchantement", lines:[`Porté par ${P(x.pct)} du top 30`, `Total médian ${md(x.median)}`]};
+  const it = heroItems()[name];
+  if(it){
+    const slotRow = A.slots.find(s => s.items.some(i => i.name === name)), row = slotRow && slotRow.items.find(i => i.name === name);
+    const leg = A.legendary.find(l => l.name === name);
+    const pct = leg ? leg.pct : row ? row.pct : null;
+    return {type:`${it.q===6?"Objet légendaire":"Objet"} · ${it.slot}`, item:it,
+            lines:[pct!=null?`Porté par ${P(pct)} du top 30`:""]};
+  }
+  if((x = find(A.special))) return {type:"Effet spécial (légendaire)", lines:[`Actif chez ${P(x.pct)} du top 30`]};
   if(isAspect(name)) return {type:"Aspect", lines:["Peu joué dans le top 30"]};
   return {type:"", lines:[]};
 }
@@ -451,16 +467,16 @@ function render(){
     <section class="panel full">
       <h2>Objets par emplacement</h2>
       <div class="scroll"><table class="slots"><tbody>${A.slots.map(s=>`<tr><td>${s.slot}</td><td>${
-        s.items.map(i=>`<span class="it${i.pct>=40?" maj":""}">${esc(i.name)}<span class="p">${P(i.pct)}</span></span>`).join("")}</td></tr>`).join("")}</tbody></table></div>
+        s.items.map(i=>`<span class="it${i.pct>=40?" maj":""}">${ic(i.name,"sm")}${esc(i.name)}<span class="p">${P(i.pct)}</span></span>`).join("")}</td></tr>`).join("")}</tbody></table></div>
       <p class="note">Pourcentage de joueurs qui portent l'objet. Encadré vert : objet porté par au moins 40 % des joueurs.</p>
     </section>
 
     <section class="panel">
       <h2>Légendaire</h2>
       <p class="empty" style="margin-bottom:8px">${P(A.legendaryPct)} des joueurs portent un objet légendaire.</p>
-      ${A.legendary.length?A.legendary.map(l=>`<div class="row"><div class="lab"><span class="it leg" style="margin:0">${esc(l.name)}</span> <small style="color:var(--mute)">${l.slot}</small></div>
+      ${A.legendary.length?A.legendary.map(l=>`<div class="row"><div class="lab"><span class="nmc">${ic(l.name)}<span class="it leg" style="margin:0">${esc(l.name)}</span></span> <small style="color:var(--mute)">${l.slot}</small></div>
         <div class="track"><div class="fill" style="width:${l.pct}%;background:var(--legend)"></div></div><div class="v">${P(l.pct)}</div></div>`).join(""):""}
-      ${A.special.length?`<h3>Effets spéciaux</h3>${bars(A.special,{core:false})}`:""}
+      ${A.special.length?`<h3>Effets spéciaux</h3>${bars(A.special,{core:false,icon:true})}`:""}
     </section>
 
     <section class="panel">
@@ -613,8 +629,8 @@ function renderPlan(){
 
     <section class="panel">
       <h2>Légendaire</h2>
-      <div class="opts">${A.legendary.map(l=>`<button type="button" class="opt${B.legendary===l.name?" sel":""}" data-act="leg" data-n="${esc(l.name)}" aria-pressed="${B.legendary===l.name}"><span class="it leg" style="margin:0">${esc(l.name)}</span> <small>${l.slot} · ${P(l.pct)}</small></button>`).join("")}</div>
-      ${A.special.length?`<h3>Effet spécial</h3><div class="opts">${A.special.map(s=>`<button type="button" class="opt${B.special===s.name?" sel":""}" data-act="spe" data-n="${esc(s.name)}" aria-pressed="${B.special===s.name}">${esc(s.name)} <small>${P(s.pct)}</small></button>`).join("")}</div>`:""}
+      <div class="opts">${A.legendary.map(l=>`<button type="button" class="opt${B.legendary===l.name?" sel":""}" data-act="leg" data-n="${esc(l.name)}" aria-pressed="${B.legendary===l.name}">${ic(l.name)}<span class="it leg" style="margin:0">${esc(l.name)}</span> <small>${l.slot} · ${P(l.pct)}</small></button>`).join("")}</div>
+      ${A.special.length?`<h3>Effet spécial</h3><div class="opts">${A.special.map(s=>`<button type="button" class="opt${B.special===s.name?" sel":""}" data-act="spe" data-n="${esc(s.name)}" aria-pressed="${B.special===s.name}">${ic(s.name)}${esc(s.name)} <small>${P(s.pct)}</small></button>`).join("")}</div>`:""}
       <h3>Cou <span class="h2x">${B.neck.length} / 3</span></h3>
       <div class="opts">${A.neck.map(x=>{const on=B.neck.includes(x.name);return `<button type="button" class="opt${on?" sel":""}" data-act="neck" data-n="${esc(x.name)}" aria-pressed="${on}" ${!on&&B.neck.length>=3?"disabled":""}><span class="nmc">${ic(x.name)}${esc(x.name)}</span> <small>${P(x.pct)}</small></button>`}).join("")}</div>
     </section>
@@ -693,6 +709,12 @@ window.addEventListener("hashchange", () => select(decodeURIComponent(location.h
 
 // Infobulle des icones + ouverture de la fiche fellows.gg au clic
 const tipEl = document.createElement("div"); tipEl.id = "tip"; tipEl.hidden = true; tipEl.setAttribute("role","tooltip"); document.body.appendChild(tipEl);
+const ATTR_FR = {"Stamina":"Endurance","Strength":"Force","Agility":"Agilité","Intellect":"Intelligence",
+  "Critical Strike":"Critique","Haste":"Hâte","Expertise":"Expertise","Spirit":"Esprit","Armor":"Armure"};
+function itemTip(it){
+  return `<div class="tt-i">Niveau d'objet ${it.ilvl}${it.socket?" · châsse de gemme":""}</div>${it.attrs.length?`<div class="tt-a">${
+    it.attrs.map(([n,v])=>`<span>+${v} ${esc(ATTR_FR[n]||n)}</span>`).join("")}</div>`:""}`;
+}
 function descFor(name){
   const D = DATA.desc || {}; if(D[name]) return D[name];
   const lc = name.toLowerCase(), k = Object.keys(D).find(x => x.toLowerCase() === lc); return k ? D[k] : "";
@@ -703,7 +725,9 @@ function showTip(el){
   const name = el.dataset.tip, info = tipInfo(name), url = el.dataset.url, d = descFor(name);
   tipEl.classList.toggle("wide", !!d);
   tipEl.innerHTML = `<div class="tt-h">${esc(name)}</div>${info.type?`<div class="tt-t">${info.type}</div>`:""}${
+    info.item ? itemTip(info.item) : ""}${
     d ? `<div class="tt-d">${fmtDesc(d)}</div>` : info.lines.filter(Boolean).map(l=>`<div>${l}</div>`).join("")}${
+    d && info.item ? info.lines.filter(Boolean).map(l=>`<div class="tt-s">${l}</div>`).join("") : ""}${
     url?`<div class="tt-l">Clic : fiche sur fellows.gg ↗</div>`:""}`;
   tipEl.hidden = false;
   const r = el.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
