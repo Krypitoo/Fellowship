@@ -11,7 +11,7 @@ if players is None:
         players = fetch_fight_players(c, "h9zPd7Y4fJq8RtHw", f["id"])
         for lst in players.values():
             for p in lst or []:
-                if p.get("name") == "Krypi":
+                if p.get("name") == "Krypi" and f["encounterID"] == 150013:
                     info = p["combatantInfo"]
                     print("FIGHT", f["id"], f["encounterID"])
                     for g in info.get("gear") or []:
