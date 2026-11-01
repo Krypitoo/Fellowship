@@ -1029,6 +1029,8 @@ document.getElementById("themeBtn").addEventListener("click", () => {
   const d = new Date(DATA.generated);
   $("#foot").innerHTML = `Mis à jour le ${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})} · Données : classements Fellowship Logs (top 30 par héros et par donjon), médianes sans pondération.`;
   try{ const m = localStorage.getItem("mode"); mode = (m === "plan" || m === "cmp") ? m : "stats"; }catch(e){}
+  // une fois le suivi demande, le site s'ouvre sur « Suivre mon build »
+  if(DATA.form && getPseudo() && Object.keys(followed()).length) mode = "cmp";
   let start = decodeURIComponent(location.hash.slice(1));
   if(!DATA.heroes[start]){ try{ start = localStorage.getItem("hero") || ""; }catch(e){ start = ""; } }
   select(start || "Helena");
