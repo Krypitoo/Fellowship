@@ -96,10 +96,12 @@ def recent_reports(client, nom):
     return sorted(reps.values(), key=lambda r: -(r.get("startTime") or 0))[:MAX_REPORTS + 5]
 
 
-def report_fights(client, code):
-    """Combats d'un log, avec pour chacun les heros joues par chaque joueur (sans lire les builds)."""
+def report_fights(client, code, start=None):
+    """Combats d'un log, avec pour chacun les heros joues par chaque joueur (sans lire les builds).
+    Un log recent peut encore recevoir des combats : on ne garde en cache que les logs de plus de 2 jours."""
     name = f"fights2_{code}.json"
-    cached = cache_get(name, 24)
+    ancien = start and time.time() * 1000 - start > 48 * 3600 * 1000
+    cached = cache_get(name, 24 * 30) if ancien else None
     if cached is not None:
         return cached
     body = ('reportData { report(code: %s) { startTime masterData { actors(type: "Player") { id name subType } } '
@@ -115,33 +117,37 @@ def report_fights(client, code):
 
 
 def find_builds(client, nom, heros=None):
-    """Dernier build de chaque heros joue par `nom` dans ses logs recents (ou du seul `heros` demande).
-    On repere d'abord dans chaque log les combats ou il joue chaque heros, puis on ne lit
-    que le build du combat le plus recent par heros."""
+    """Build du combat le plus recent de chaque heros joue par `nom` (ou du seul `heros` demande).
+    Tous les combats des logs recents sont classes par date reelle (debut du log + moment du
+    combat), tous logs confondus, puis on lit le build du plus recent pour chaque heros."""
     reports = recent_reports(client, nom)
     if reports is None:
         return [], "joueur introuvable sur Fellowship Logs"
-    found, lus = {}, 0
+    combats = []   # (date, code du log, combat, heros joues par `nom`)
     for rep in reports:
-        info = report_fights(client, rep["code"])
-        for f in sorted(info["fights"], key=lambda f: -(f.get("startTime") or 0)):
-            joues = {h for n, h in f["players"] if n == nom and h in KNOWN_HEROES and h not in found
-                     and (not heros or h == heros)}
-            if not joues or lus >= MAX_FIGHTS:
-                continue
-            lus += 1
-            players = fetch_fight_players(client, rep["code"], f["id"])
-            for lst in players.values():
-                for p in lst or []:
-                    h = p.get("type")
-                    if p.get("name") != nom or h not in joues or not p.get("combatantInfo"):
-                        continue
-                    found[h] = {"heros": h, "report": rep["code"], "fight": f["id"],
-                                "encounter": f.get("encounterID"),
-                                "date": (info.get("startTime") or 0) + (f.get("startTime") or 0),
+        info = report_fights(client, rep["code"], rep.get("startTime"))
+        debut = info.get("startTime") or rep.get("startTime") or 0
+        for f in info["fights"]:
+            joues = {h for n, h in f["players"] if n == nom and h in KNOWN_HEROES and (not heros or h == heros)}
+            if joues:
+                combats.append((debut + (f.get("startTime") or 0), rep["code"], f, joues))
+    combats.sort(key=lambda c: -c[0])
+    found, lus = {}, 0
+    for date, code, f, joues in combats:
+        joues = joues - found.keys()
+        if not joues or lus >= MAX_FIGHTS:
+            continue
+        lus += 1
+        players = fetch_fight_players(client, code, f["id"])
+        for lst in players.values():
+            for p in lst or []:
+                h = p.get("type")
+                if p.get("name") == nom and h in joues and p.get("combatantInfo"):
+                    found[h] = {"heros": h, "report": code, "fight": f["id"],
+                                "encounter": f.get("encounterID"), "date": date,
                                 "info": p["combatantInfo"]}
-            if heros and heros in found:
-                return list(found.values()), None
+        if heros and heros in found:
+            break
     if not found:
         return [], "aucun combat de donjon trouvé dans les derniers logs" + (f" avec {heros}" if heros else "")
     return list(found.values()), None
