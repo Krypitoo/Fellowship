@@ -66,8 +66,8 @@ def form_players():
         seen.add(key)
         out.append({"nom": nom, "heros": heros, "source": "site"})
     return out[: int(cfg.get("max_joueurs", 100))]
-MAX_REPORTS = 10   # logs recents parcourus par joueur
-MAX_FIGHTS = 40    # combats lus au maximum par joueur (quota de l'API)
+MAX_REPORTS = 20   # logs recents parcourus par joueur
+MAX_FIGHTS = 15    # builds lus au maximum par joueur (un par heros trouve)
 
 
 def recent_reports(client, nom):
@@ -80,37 +80,44 @@ def recent_reports(client, nom):
 
 
 def report_fights(client, code):
-    name = f"fights_{code}.json"
+    """Combats d'un log, avec pour chacun les heros joues par chaque joueur (sans lire les builds)."""
+    name = f"fights2_{code}.json"
     cached = cache_get(name, 24)
     if cached is not None:
         return cached
-    body = 'reportData { report(code: %s) { startTime fights { id encounterID startTime } } }' % json.dumps(code)
+    body = ('reportData { report(code: %s) { startTime masterData { actors(type: "Player") { id name subType } } '
+            'fights { id encounterID startTime friendlyPlayers } } }' % json.dumps(code))
     rep = client.query(body)["reportData"]["report"] or {}
-    fights = [f for f in rep.get("fights") or [] if f.get("encounterID")]
+    actors = {a["id"]: [a.get("name"), a.get("subType")] for a in (rep.get("masterData") or {}).get("actors") or []}
+    fights = [{"id": f["id"], "encounterID": f["encounterID"], "startTime": f.get("startTime"),
+               "players": [actors[i] for i in f.get("friendlyPlayers") or [] if i in actors]}
+              for f in rep.get("fights") or [] if f.get("encounterID")]
     out = {"startTime": rep.get("startTime"), "fights": fights}
     cache_put(name, out)
     return out
 
 
 def find_builds(client, nom, heros=None):
-    """Dernier build de chaque heros joue par `nom` dans ses logs recents (ou du seul `heros` demande)."""
+    """Dernier build de chaque heros joue par `nom` dans ses logs recents (ou du seul `heros` demande).
+    On repere d'abord dans chaque log les combats ou il joue chaque heros, puis on ne lit
+    que le build du combat le plus recent par heros."""
     reports = recent_reports(client, nom)
     if reports is None:
         return [], "joueur introuvable sur Fellowship Logs"
-    found, vus = {}, 0
+    found, lus = {}, 0
     for rep in reports:
         info = report_fights(client, rep["code"])
         for f in sorted(info["fights"], key=lambda f: -(f.get("startTime") or 0)):
-            if vus >= MAX_FIGHTS:
-                break
-            vus += 1
+            joues = {h for n, h in f["players"] if n == nom and h in KNOWN_HEROES and h not in found
+                     and (not heros or h == heros)}
+            if not joues or lus >= MAX_FIGHTS:
+                continue
+            lus += 1
             players = fetch_fight_players(client, rep["code"], f["id"])
             for lst in players.values():
                 for p in lst or []:
                     h = p.get("type")
-                    if p.get("name") != nom or not p.get("combatantInfo") or h in found:
-                        continue
-                    if heros and h != heros:
+                    if p.get("name") != nom or h not in joues or not p.get("combatantInfo"):
                         continue
                     found[h] = {"heros": h, "report": rep["code"], "fight": f["id"],
                                 "encounter": f.get("encounterID"),
