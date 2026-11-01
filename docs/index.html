@@ -116,7 +116,8 @@ table.cmp td{vertical-align:middle}
 .herolink{color:color-mix(in srgb,var(--hc) var(--hmix),#000);font-weight:600;border-color:color-mix(in srgb,var(--hc) 45%,var(--line))}
 #pseudo{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:180px}
 .infoi{display:inline-grid;place-items:center;width:16px;height:16px;border:1.5px solid var(--mute);border-radius:50%;font:700 10.5px/1 Georgia,serif;font-style:italic;color:var(--mute);margin-right:7px;vertical-align:-3px;cursor:help}
-.planbar{position:relative}
+.planbar,section.panel{position:relative}
+section.panel:has(> .infoi.corner) > h2{padding-right:30px}
 .infoi.head{margin:0 0 6px auto;width:20px;height:20px;font-size:12px}
 .infoi.corner{position:absolute;top:12px;right:12px;margin:0;width:20px;height:20px;font-size:12px}
 #tip .tt-p{margin:0 0 6px} #tip .tt-p:last-child{margin:0}
@@ -509,7 +510,7 @@ function render(){
 
     <section class="panel">
       <h2>Bénédictions</h2>
-      ${heatTable(A.blessings,"Bénédiction")}
+      ${heatTable(A.blessings.filter(x => x.pct >= 10),"Bénédiction")}
       <p class="note">Colonnes : niveau total de la bénédiction sur l'équipement, et nombre de builds à ce niveau.</p>
     </section>
 
@@ -536,7 +537,7 @@ function render(){
 
     <section class="panel">
       <h2>Cou</h2>
-      ${bars(A.neck,{icon:true})}
+      ${bars(A.neck.filter(x => x.pct >= 10),{icon:true})}
       <h3>Combinaisons</h3>${combos(A.neckCombos)}
     </section>
   </div>`;
@@ -680,7 +681,7 @@ function renderPlan(){
 
     <section class="panel">
       <h2>Bénédictions visées</h2>
-      ${listWith(A.blessings,B.blessings).map(n=>stepper("blessings",n,B.blessings[n]||0,refB(n))).join("")}
+      ${listWith(A.blessings.filter(x=>x.pct>=10),B.blessings).map(n=>stepper("blessings",n,B.blessings[n]||0,refB(n))).join("")}
       <p class="note">Rang ou niveau total visé sur l'équipement. « – » : non pris.</p>
     </section>
 
@@ -689,7 +690,7 @@ function renderPlan(){
       <div class="opts">${A.legendary.map(l=>`<button type="button" class="opt${B.legendary===l.name?" sel":""}" data-act="leg" data-n="${esc(l.name)}" aria-pressed="${B.legendary===l.name}">${ic(l.name)}<span class="it leg" style="margin:0">${esc(l.name)}</span> <small>${l.slot} · ${P(l.pct)}</small></button>`).join("")}</div>
       ${A.special.length?`<h3>Effet spécial</h3><div class="opts">${A.special.map(s=>`<button type="button" class="opt${B.special===s.name?" sel":""}" data-act="spe" data-n="${esc(s.name)}" aria-pressed="${B.special===s.name}">${ic(s.name)}${esc(s.name)} <small>${P(s.pct)}</small></button>`).join("")}</div>`:""}
       <h3>Cou <span class="h2x">${B.neck.length} / 3</span></h3>
-      <div class="opts">${A.neck.map(x=>{const on=B.neck.includes(x.name);return `<button type="button" class="opt${on?" sel":""}" data-act="neck" data-n="${esc(x.name)}" aria-pressed="${on}" ${!on&&B.neck.length>=3?"disabled":""}><span class="nmc">${ic(x.name)}${esc(x.name)}</span> <small>${P(x.pct)}</small></button>`}).join("")}</div>
+      <div class="opts">${A.neck.filter(x=>x.pct>=10||B.neck.includes(x.name)).map(x=>{const on=B.neck.includes(x.name);return `<button type="button" class="opt${on?" sel":""}" data-act="neck" data-n="${esc(x.name)}" aria-pressed="${on}" ${!on&&B.neck.length>=3?"disabled":""}><span class="nmc">${ic(x.name)}${esc(x.name)}</span> <small>${P(x.pct)}</small></button>`}).join("")}</div>
     </section>
   </div>`;
 }
@@ -1019,6 +1020,21 @@ document.addEventListener("keydown", e => {
   const el = e.target.closest && e.target.closest(".ic[data-url]");
   if(el && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); e.stopPropagation(); openFiche(el); }
 }, true);
+
+// Les textes d'aide en bas de chaque panneau passent dans une icone « i » (infobulle) en haut a droite
+function notesToInfo(){
+  document.querySelectorAll("#app section.panel").forEach(sec => {
+    const notes = [...sec.querySelectorAll(":scope > p.note")];
+    if(!notes.length || sec.querySelector(":scope > .infoi.corner")) return;
+    const txt = notes.map(n => n.textContent.trim()).filter(Boolean).join("\n\n");
+    notes.forEach(n => n.remove());
+    const i = document.createElement("span");
+    i.className = "infoi corner"; i.tabIndex = 0; i.setAttribute("role", "img");
+    i.setAttribute("aria-label", "Aide : " + txt.slice(0, 80)); i.dataset.info = txt; i.textContent = "i";
+    sec.prepend(i);
+  });
+}
+new MutationObserver(notesToInfo).observe(document.getElementById("app"), {childList: true});
 
 // Theme : automatique (suit l'appareil), sombre ou clair ; choix garde dans ce navigateur
 const THEMES = [["auto","◐ Auto"],["dark","☾ Sombre"],["light","☀ Clair"]];
