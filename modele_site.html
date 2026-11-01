@@ -562,7 +562,7 @@ function flash(txt){
 const newId = () => "b" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
 
 function emptyBuild(name){
-  return {name, talents:[], stats:{}, gems:{}, neck:[], legendary:"", special:"", aspects:{}, sigils:{}, blessings:{}};
+  return {name, talents:[], stats:{}, gems:{}, neck:[], orbs:[], legendary:"", special:"", aspects:{}, sigils:{}, blessings:{}};
 }
 function topBuild(name){
   const A = DATA.heroes[hero].all, b = emptyBuild(name);
@@ -572,6 +572,7 @@ function topBuild(name){
   A.secondary.forEach(s=>{ b.stats[s.key] = Math.round(s.raw); });
   if(A.gemTiers) for(const k of GEM_ORDER){ const tr=A.gemTiers[k]; if(tr) b.gems[k] = tr.indexOf(Math.max(...tr)); }
   b.neck = A.neck.slice(0,3).map(x=>x.name);
+  b.orbs = orbList(A).slice(0,2).map(x=>x.name);
   b.legendary = A.legendary[0] ? A.legendary[0].name : "";
   b.special = A.special[0] ? A.special[0].name : "";
   for(const t of A.traits) if(t.pct>=50) (isAspect(t.name)?b.aspects:b.sigils)[t.name] = Math.max(1, Math.round(t.median||1));
@@ -599,6 +600,8 @@ function stepper(group, name, val, ref){
     <span class="ref">${ref}</span>
     <span class="step"><button type="button" data-act="dec" data-g="${group}" data-n="${esc(name)}" aria-label="Moins">−</button><b>${val||"–"}</b><button type="button" data-act="inc" data-g="${group}" data-n="${esc(name)}" aria-label="Plus">+</button></span></div>`;
 }
+const orbList = A => ((A.slots||[]).find(s=>s.slot==="Orbes")||{items:[]}).items;
+const ORBS_MAX = 2;   // emplacements d'orbes en jeu
 function listWith(base, chosen){ const names = base.map(x=>x.name); return names.concat(Object.keys(chosen).filter(n=>!names.includes(n))); }
 
 function renderPlan(){
@@ -682,9 +685,11 @@ function renderPlan(){
     </section>
 
     <section class="panel">
-      <h2>Légendaire</h2>
+      <h2>Légendaire, orbes et cou</h2>
       <div class="opts">${A.legendary.map(l=>`<button type="button" class="opt${B.legendary===l.name?" sel":""}" data-act="leg" data-n="${esc(l.name)}" aria-pressed="${B.legendary===l.name}">${ic(l.name)}<span class="it leg" style="margin:0">${esc(l.name)}</span> <small>${l.slot} · ${P(l.pct)}</small></button>`).join("")}</div>
       ${A.special.length?`<h3>Effet spécial</h3><div class="opts">${A.special.map(s=>`<button type="button" class="opt${B.special===s.name?" sel":""}" data-act="spe" data-n="${esc(s.name)}" aria-pressed="${B.special===s.name}">${ic(s.name)}${esc(s.name)} <small>${P(s.pct)}</small></button>`).join("")}</div>`:""}
+      <h3>Orbes <span class="h2x">${(B.orbs||[]).length} / ${ORBS_MAX}</span></h3>
+      <div class="opts">${listWith(orbList(A), Object.fromEntries((B.orbs||[]).map(n=>[n,1]))).map(n=>{const x=orbList(A).find(o=>o.name===n), on=(B.orbs||[]).includes(n);return `<button type="button" class="opt${on?" sel":""}" data-act="orb" data-n="${esc(n)}" aria-pressed="${on}" ${!on&&(B.orbs||[]).length>=ORBS_MAX?"disabled":""}><span class="nmc">${ic(n)}${esc(n)}</span> <small>${x?P(x.pct):""}</small></button>`}).join("")||'<p class="empty">Aucune donnée.</p>'}</div>
       <h3>Cou <span class="h2x">${B.neck.length} / 3</span></h3>
       <div class="opts">${A.neck.filter(x=>x.pct>=10||B.neck.includes(x.name)).map(x=>{const on=B.neck.includes(x.name);return `<button type="button" class="opt${on?" sel":""}" data-act="neck" data-n="${esc(x.name)}" aria-pressed="${on}" ${!on&&B.neck.length>=3?"disabled":""}><span class="nmc">${ic(x.name)}${esc(x.name)}</span> <small>${P(x.pct)}</small></button>`}).join("")}</div>
     </section>
@@ -706,6 +711,7 @@ function planClick(t){
     case "inc": case "dec": { const g = B[t.dataset.g]; const v = Math.max(0, Math.min(8, (g[n]||0) + (act==="inc"?1:-1))); if(v) g[n]=v; else delete g[n]; break; }
     case "leg": B.legendary = B.legendary===n ? "" : n; break;
     case "spe": B.special = B.special===n ? "" : n; break;
+    case "orb": { const o = B.orbs || []; B.orbs = o.includes(n) ? o.filter(x=>x!==n) : (o.length<ORBS_MAX ? o.concat(n) : o); break; }
     case "neck": B.neck = B.neck.includes(n) ? B.neck.filter(x=>x!==n) : (B.neck.length<3 ? B.neck.concat(n) : B.neck); break;
     case "new-top": case "new-empty": { const id=newId(); const k=Object.keys(S.builds).length+1;
       S.builds[id] = act==="new-top" ? topBuild(`Build ${k}`) : emptyBuild(`Build ${k}`); S.cur=id; break; }
@@ -870,7 +876,10 @@ function renderCmp(){
       return `<tr><td>${lab}</td><td>${has.length?has.map(x=>`<span class="nmc">${ic(x)}${esc(x)}</span>`).join(" "):"–"}</td><td><span class="nmc">${ic(want)}${esc(want)}</span></td><td class="n">${good?chip("ok","✓"):chip("miss","à obtenir")}</td></tr>`; };
     const neckRows = B.neck.map(n => { const good = count(b.neck.includes(n));
       return `<tr><td>Cou</td><td>${b.neck.includes(n)?`<span class="nmc">${ic(n)}${esc(n)}</span>`:"–"}</td><td><span class="nmc">${ic(n)}${esc(n)}</span></td><td class="n">${good?chip("ok","✓"):chip("miss","à choisir")}</td></tr>`; }).join("");
-    const misc = one("Légendaire", B.legendary, b.legendary) + one("Effet spécial", B.special, b.special) + neckRows;
+    const orbsHas = Object.entries(b.items||{}).filter(([k])=>k.startsWith("Orbes")).map(([,v])=>v);
+    const orbRows = (B.orbs||[]).map(n => { const good = count(orbsHas.includes(n));
+      return `<tr><td>Orbe</td><td>${good?`<span class="nmc">${ic(n)}${esc(n)}</span>`:orbsHas.filter(x=>!(B.orbs||[]).includes(x)).map(x=>`<span class="nmc">${ic(x)}${esc(x)}</span>`).join(" ")||"–"}</td><td><span class="nmc">${ic(n)}${esc(n)}</span></td><td class="n">${good?chip("ok","✓"):chip("miss","à obtenir")}</td></tr>`; }).join("");
+    const misc = one("Légendaire", B.legendary, b.legendary) + one("Effet spécial", B.special, b.special) + orbRows + neckRows;
     body = `
     <div class="grid">
       <section class="panel full"><h2>Talents</h2><div class="tgrid${TALENT_LAYOUT[hero]?" game":""}">${tiles}</div>
@@ -881,7 +890,7 @@ function renderCmp(){
       <section class="panel"><h2>Aspects</h2>${tbl("Aspect", rankRows(B.aspects, b.traits, "rang"))}</section>
       <section class="panel"><h2>Sigils</h2>${tbl("Sigil", rankRows(B.sigils, b.traits, "rang"))}</section>
       <section class="panel"><h2>Bénédictions</h2>${tbl("Bénédiction", rankRows(B.blessings, b.blessings, "niveau"))}</section>
-      <section class="panel"><h2>Légendaire et cou</h2><div class="scroll"><table class="cmp"><thead><tr><th></th><th>Actuel</th><th>Objectif</th><th class="n">Statut</th></tr></thead><tbody>${misc || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`}</tbody></table></div></section>
+      <section class="panel"><h2>Légendaire, orbes et cou</h2><div class="scroll"><table class="cmp"><thead><tr><th></th><th>Actuel</th><th>Objectif</th><th class="n">Statut</th></tr></thead><tbody>${misc || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`}</tbody></table></div></section>
     </div>`;
   }
   const pctOk = tot ? Math.round(100*ok/tot) : 0;
