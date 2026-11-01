@@ -21,6 +21,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # derniere version, meme si quelque chose a ete publie entre-temps
 
       - uses: actions/setup-python@v5
         with:
@@ -48,10 +50,23 @@ jobs:
         run: python build_site.py --from-html docs/index.html --joueurs resultats/joueurs_suivis.json -o docs/index.html
 
       - name: Publication
+        env:
+          REGEN: "python build_site.py --from-html docs/index.html --joueurs resultats/joueurs_suivis.json -o docs/index.html"
         run: |
           git config user.name "maj-auto"
           git config user.email "maj-auto@users.noreply.github.com"
-          git add docs/index.html
-          git diff --cached --quiet || git commit -m "Builds des joueurs suivis $(date -u +%F\ %Hh)"
-          git pull --rebase
-          git push
+          publier() {
+            git add docs/index.html
+            git diff --cached --quiet && return 0
+            git commit -q -m "Builds des joueurs suivis $(date -u +%F\ %Hh)"
+          }
+          publier
+          for essai in 1 2 3; do
+            git pull --rebase -q && git push -q && exit 0
+            # quelqu'un a publie pendant ce temps : on repart de la derniere version et on regenere
+            git rebase --abort 2>/dev/null || true
+            git fetch -q origin main && git reset -q --hard origin/main
+            eval "$REGEN"
+            publier
+          done
+          exit 1
