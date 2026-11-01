@@ -36,6 +36,13 @@ jobs:
           FELLOWSHIP_CLIENT_SECRET: ${{ secrets.FELLOWSHIP_CLIENT_SECRET }}
         run: python comparer_builds.py --all --top 30 > collecte.log 2>&1 || (tail -40 collecte.log; exit 1)
 
+      - name: Builds des joueurs suivis
+        continue-on-error: true
+        env:
+          FELLOWSHIP_CLIENT_ID: ${{ secrets.FELLOWSHIP_CLIENT_ID }}
+          FELLOWSHIP_CLIENT_SECRET: ${{ secrets.FELLOWSHIP_CLIENT_SECRET }}
+        run: python suivre_joueurs.py
+
       # Sauvegarde le cache meme si la collecte a echoue a mi-chemin
       - uses: actions/cache/save@v4
         if: always()
@@ -44,7 +51,7 @@ jobs:
           key: api-cache-${{ github.run_id }}
 
       - name: Generation du site
-        run: python build_site.py resultats/builds_*.json -o docs/index.html
+        run: python build_site.py resultats/builds_*.json --joueurs resultats/joueurs_suivis.json -o docs/index.html
 
       - name: Publication
         run: |

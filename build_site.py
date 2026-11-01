@@ -260,6 +260,43 @@ def aggregate(builds):
     return A
 
 
+def profile(b):
+    """Build d'un joueur sous forme simple, pour le comparer a un build objectif."""
+    info = b["info"]
+    tr, bl = Counter(), Counter()
+    for g in gear(b):
+        for t in g.get("traits") or []:
+            if t.get("name") and not is_ench(clean(t["name"])):
+                tr[clean(t["name"])] += t.get("rank", 1)
+        for x in g.get("blessings") or []:
+            if x.get("name"):
+                bl[x["name"]] += x.get("level", 1)
+    lv = [g.get("itemLevel") for g in gear(b) if g.get("itemLevel")]
+    return {
+        "talents": sorted({t["name"] for t in info.get("talents") or [] if t.get("name")}),
+        "stats": {k: stat(b, k) for k in SECONDARY if stat(b, k) is not None},
+        "pct": {k: r1((stat(b, k + "Percent") or 0) / 100) for k in SECONDARY},
+        "gems": {k: stat(b, k) or 0 for k in GEM_KEYS},
+        "neck": sorted({h["name"] for h in info.get("heartOfAzeroth") or [] if h.get("total", 0) >= 1 and h.get("name")}),
+        "legendary": sorted({clean(g["name"]) for g in gear(b) if g.get("quality") == 6}),
+        "special": sorted({a["name"] for a in info.get("artifact") or []
+                           if a.get("type") == 1024 and a.get("total", 0) >= 1 and a.get("name")}),
+        "traits": dict(tr), "blessings": dict(bl),
+        "items": {SLOT_LABELS.get(g["slot"], "?") + ("" if g["slot"] not in (10, 12) else " 2"): clean(g["name"]) for g in gear(b)},
+        "ilvl": r1(sum(lv) / len(lv)) if lv else None,
+    }
+
+
+def load_players(path):
+    out = []
+    for j in json.loads(Path(path).read_text(encoding="utf-8")):
+        row = {k: j.get(k) for k in ("nom", "heros", "date", "encounter", "report", "erreur", "releve")}
+        if j.get("info"):
+            row["build"] = profile({"info": j["info"]})
+        out.append(row)
+    return out
+
+
 def enc_short(e):
     return int(e) % 50000 if int(e) >= 50000 else int(e)
 
@@ -272,6 +309,8 @@ def main():
                     help="reprend les donnees deja calculees dans une page existante "
                          "(ex. docs/index.html) : change seulement la mise en page")
     ap.add_argument("-o", "--out", default="index.html")
+    ap.add_argument("--joueurs", metavar="FICHIER",
+                    help="builds des joueurs suivis (resultats/joueurs_suivis.json)")
     ap.add_argument("--fragment", action="store_true",
                     help="sans <html>/<head> (pour une publication sur Claude)")
     args = ap.parse_args()
@@ -283,6 +322,9 @@ def main():
         data = build_data(args.files)
     else:
         ap.error("donne des fichiers builds_<heros>.json ou --from-html")
+    if args.joueurs and Path(args.joueurs).exists():
+        data["players"] = load_players(args.joueurs)
+        print(f"Joueurs suivis : {len(data['players'])}")
     render(data, Path(args.out), args.fragment)
 
 
