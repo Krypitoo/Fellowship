@@ -498,13 +498,13 @@ function render(){
 
     <section class="panel">
       <h2>Aspects</h2>
-      ${heatTable(A.traits.filter(x=>isAspect(x.name)),"Aspect")}
+      ${heatTable(A.traits.filter(x=>isAspect(x.name) && x.pct>=10),"Aspect")}
       <p class="note">Colonnes : rang total sur l'équipement, et nombre de builds à ce rang. Médiane calculée sur les builds qui le portent.</p>
     </section>
 
     <section class="panel">
       <h2>Sigils</h2>
-      ${heatTable(A.traits.filter(x=>!isAspect(x.name) && !isSpecial(x.name)),"Sigil")}
+      ${heatTable(A.traits.filter(x=>!isAspect(x.name) && !isSpecial(x.name) && x.pct>=10),"Sigil")}
       <p class="note">Même lecture que pour les aspects.</p>
     </section>
 
@@ -612,7 +612,7 @@ function renderPlan(){
   const cost = chosenT.reduce((s,t)=>s+(t.cost||0),0);
   const refT = n => { const t=A.traits.find(x=>x.name===n); return t?`top 30 : ${P(t.pct)} · rang ${fr(t.median,t.median%1?1:0)}`:"peu joué"; };
   const refB = n => { const t=A.blessings.find(x=>x.name===n); return t?`top 30 : ${P(t.pct)} · niv. ${fr(t.median,t.median%1?1:0)}`:"peu joué"; };
-  const traitNames = listWith(A.traits, Object.assign({}, B.aspects, B.sigils));
+  const traitNames = listWith(A.traits.filter(x=>x.pct>=10), Object.assign({}, B.aspects, B.sigils));
   const asp = traitNames.filter(isAspect), sig = traitNames.filter(n=>!isAspect(n) && !isSpecial(n));
   const code = planUi.exp ? btoa(unescape(encodeURIComponent(JSON.stringify({v:1, hero, build:B})))) : "";
 
