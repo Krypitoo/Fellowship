@@ -1,5 +1,6 @@
 # Diagnostic ponctuel : traits bruts de Krypi (Helena) dans le combat releve
-import json, os
+import json, os, sys
+sys.path.insert(0, ".")
 from comparer_builds import Client, fetch_fight_players
 c = Client(os.environ["FELLOWSHIP_CLIENT_ID"], os.environ["FELLOWSHIP_CLIENT_SECRET"])
 players = fetch_fight_players(c, "h9zPd7Y4fJq8RtHw", int(os.environ.get("FIGHT", "0") or 0)) if os.environ.get("FIGHT") else None
