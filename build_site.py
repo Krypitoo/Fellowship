@@ -110,6 +110,19 @@ def level_table(per_build, n, top, with_dist=False):
     return out
 
 
+def weapon_fx(builds):
+    """Arme -> effet special (type 1024) qu'elle donne, par heros (le meme nom d'arme
+    donne un effet different selon le heros)."""
+    pairs = defaultdict(Counter)
+    for b in builds:
+        weapons = {clean(g["name"]) for g in gear(b) if g.get("slot") == 13 and g.get("name")}
+        fx = {a["name"] for a in b["info"].get("artifact") or []
+              if a.get("type") == 1024 and a.get("total", 0) >= 1 and a.get("name")}
+        if len(weapons) == 1 and len(fx) == 1:
+            pairs[next(iter(weapons))][next(iter(fx))] += 1
+    return {w: c.most_common(1)[0][0] for w, c in pairs.items()}
+
+
 def aggregate(builds):
     n = len(builds)
     A = {"n": n}
@@ -413,7 +426,7 @@ def build_data(files):
         by_enc = defaultdict(list)
         for b in builds:
             by_enc[str(b["encounter"])].append(b)
-        heroes[hero] = {"all": aggregate(builds), "items": items,
+        heroes[hero] = {"all": aggregate(builds), "items": items, "weaponFx": weapon_fx(builds),
                         "byEncounter": {e: aggregate(bs) for e, bs in sorted(by_enc.items())}}
         print(f"{hero} : {len(builds)} builds, {len(by_enc)} donjon(s)")
 

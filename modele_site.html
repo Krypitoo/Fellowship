@@ -943,7 +943,9 @@ function itemTip(it){
     it.attrs.map(([n,v])=>`<span>+${v} ${esc(ATTR_FR[n]||n)}</span>`).join("")}</div>`:""}`;
 }
 function descFor(name){
-  const D = DATA.desc || {}; if(D[name]) return D[name];
+  const D = DATA.desc || {}, fx = ((DATA.heroes[hero]||{}).weaponFx||{})[name];
+  if(fx){ const d = descFor(fx); if(d) return `${fx.toUpperCase()}\n\n${d}`; }
+  if(D[name]) return D[name];
   const lc = name.toLowerCase(), k = Object.keys(D).find(x => x.toLowerCase() === lc); return k ? D[k] : "";
 }
 const fmtDesc = d => esc(d).replace(/\[([A-Z]+)\]|\b(MAJOR|CORE|POWER|BASIC|CONTROL)\b/g, (m,a,b)=>`<b class="kw">${a||b}</b>`)
