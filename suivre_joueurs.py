@@ -67,16 +67,33 @@ def form_players():
         out.append({"nom": nom, "heros": heros, "source": "site"})
     return out[: int(cfg.get("max_joueurs", 100))]
 MAX_REPORTS = 20   # logs recents parcourus par joueur
+MAX_OWNERS = 3     # comptes dont on lit aussi les derniers logs envoyes
 MAX_FIGHTS = 15    # builds lus au maximum par joueur (un par heros trouve)
 
 
 def recent_reports(client, nom):
+    """Logs recents du joueur. Fellowship Logs met du temps a rattacher un nouveau log aux
+    personnages : on ajoute donc les derniers logs envoyes par les comptes qui ont publie ses
+    logs (lui-meme ou un membre de son groupe), qu'on filtre ensuite sur son nom."""
     body = ('characterData { character(name: %s, serverSlug: "global", serverRegion: "global") '
-            '{ id name recentReports(limit: %d) { data { code startTime } } } }' % (json.dumps(nom), MAX_REPORTS))
+            '{ id name recentReports(limit: %d) { data { code startTime owner { id } } } } }' % (json.dumps(nom), MAX_REPORTS))
     ch = client.query(body)["characterData"]["character"]
     if not ch:
         return None
-    return sorted((ch.get("recentReports") or {}).get("data") or [], key=lambda r: -(r.get("startTime") or 0))
+    reps = {r["code"]: r for r in (ch.get("recentReports") or {}).get("data") or []}
+    owners = []
+    for r in sorted(reps.values(), key=lambda r: -(r.get("startTime") or 0)):
+        oid = (r.get("owner") or {}).get("id")
+        if oid and oid not in owners:
+            owners.append(oid)
+    for oid in owners[:MAX_OWNERS]:
+        try:
+            got = client.query('reportData { reports(userID: %d, limit: 5) { data { code startTime } } }' % int(oid))
+            for r in got["reportData"]["reports"]["data"] or []:
+                reps.setdefault(r["code"], r)
+        except Exception as e:  # le suivi marche quand meme sans ce complement
+            print(f"  (logs du compte {oid} non lus : {e})")
+    return sorted(reps.values(), key=lambda r: -(r.get("startTime") or 0))[:MAX_REPORTS + 5]
 
 
 def report_fights(client, code):
