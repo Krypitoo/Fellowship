@@ -109,6 +109,7 @@ table.cmp td{vertical-align:middle}
 .ctile.extra .nm{text-decoration:line-through;color:var(--mute)}
 .ctile.off{opacity:.4}
 .follow{padding-top:10px;border-top:1px solid var(--line)}
+.herolink{color:color-mix(in srgb,var(--hc) var(--hmix),#000);font-weight:600;border-color:color-mix(in srgb,var(--hc) 45%,var(--line))}
 #pseudo{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:180px}
 .btn.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:600}
 .fstat{font-size:13px;color:var(--mute);display:inline-flex;gap:8px;align-items:center}
@@ -740,13 +741,17 @@ const PSEUDO_RE = /^[^\W_][\w' .-]{1,23}$/u;
 function getPseudo(){ try{ return localStorage.getItem("fellowship-pseudo") || ""; }catch(e){ return ""; } }
 function setPseudo(n){ try{ localStorage.setItem("fellowship-pseudo", n); }catch(e){} }
 function followed(){ try{ return JSON.parse(localStorage.getItem("fellowship-suivis")) || {}; }catch(e){ return {}; } }
-function markFollowed(n, h){ const f = followed(); f[(n+"|"+h).toLowerCase()] = Date.now(); try{ localStorage.setItem("fellowship-suivis", JSON.stringify(f)); }catch(e){} }
-const isFollowed = (n, h) => !!n && !!followed()[(n+"|"+h).toLowerCase()];
+// Un pseudo suit tous les heros qu'il joue
+function markFollowed(n){ const f = followed(); f[n.toLowerCase()] = Date.now(); try{ localStorage.setItem("fellowship-suivis", JSON.stringify(f)); }catch(e){} }
+const isFollowed = (n, h) => !!n && (!!followed()[n.toLowerCase()] || !!followed()[(n+"|"+h).toLowerCase()]);
+const playerRows = n => (DATA.players||[]).filter(x => x.nom.toLowerCase() === (n||"").toLowerCase());
 function followStatus(){
   const n = getPseudo(); if(!n) return "";
-  const p = (DATA.players||[]).find(x => x.nom.toLowerCase() === n.toLowerCase() && x.heros === hero);
+  const rows = playerRows(n), p = rows.find(x => x.heros === hero);
   if(p && p.build) return `<span class="st ok">Suivi actif</span>`;
-  if(p && p.erreur) return `<span class="st miss">${esc(p.erreur)}</span>`;
+  const err = rows.find(x => x.erreur);
+  if(err && !rows.some(x => x.build)) return `<span class="st miss">${esc(err.erreur)}</span>`;
+  if(rows.some(x => x.build)) return `<span class="st extra">Pas de log récent avec ${esc(hero)}</span>`;
   if(isFollowed(n, hero)) return `<span class="st extra">En attente</span> relevé à la prochaine mise à jour (20 h, 2 h ou 13 h)`;
   return "";
 }
@@ -755,9 +760,9 @@ function doFollow(){
   const nom = ($("#pseudo").value || "").trim();
   if(!PSEUDO_RE.test(nom)){ flash("Pseudo invalide : 2 à 24 caractères, lettres, chiffres, espaces, . - '"); return; }
   setPseudo(nom); cmpUi.player = "";
-  const body = new URLSearchParams({[DATA.form.champ_pseudo]: nom, [DATA.form.champ_heros]: hero});
+  const body = new URLSearchParams({[DATA.form.champ_pseudo]: nom, [DATA.form.champ_heros]: "Tous"});
   fetch(DATA.form.envoi, {method:"POST", mode:"no-cors", body})
-    .then(() => { markFollowed(nom, hero); render(); flash("Pseudo enregistré pour " + hero); })
+    .then(() => { markFollowed(nom); render(); flash("Pseudo enregistré : tous tes héros seront suivis"); })
     .catch(() => flash("Envoi impossible : vérifie ta connexion et réessaie"));
 }
 
@@ -780,11 +785,16 @@ function renderCmp(){
   let ok = 0, tot = 0; const count = c => { tot++; if(c) ok++; return c; };
   let body = "";
   if(!b){
-    const waiting = me && isFollowed(me, hero) && !mineMe;
+    const rows = playerRows(me), autres = rows.filter(x => x.build && x.heros !== hero).map(x => x.heros);
+    const errMe = rows.find(x => x.erreur && !x.heros);
+    const waiting = me && isFollowed(me, hero) && !rows.length;
     body = `<section class="panel full"><h2>${P0 ? "Build introuvable" : "Ton avancement"}</h2>${
       P0 ? `<p>${esc(P0.erreur || "Pas encore de données pour ce joueur.")}</p><p class="note">Le build est relu à 20 h, 2 h et 13 h dans les derniers logs publiés sur Fellowship Logs.</p>`
-      : waiting ? `<p><b>${esc(me)}</b> est enregistré pour ${esc(hero)}. Ton build apparaîtra ici après le prochain relevé (20 h, 2 h ou 13 h).</p>`
-      : `<p>Saisis ton pseudo Fellowship Logs ci-dessus puis clique sur « Suivre ce héros ». Ton build réel sera relevé dans tes derniers logs (à 20 h, 2 h et 13 h) et comparé à ton build objectif.</p>
+      : errMe ? `<p>Pour <b>${esc(me)}</b> : ${esc(errMe.erreur)}.</p><p class="note">Vérifie l'orthographe exacte de ton pseudo sur Fellowship Logs et que tes logs y sont publiés.</p>`
+      : autres.length ? `<p>Aucun combat récent de <b>${esc(me)}</b> avec ${esc(hero)} dans ses derniers logs.</p>
+          <p>Héros relevés : ${autres.map(h=>`<button type="button" class="btn herolink" data-h="${esc(h)}" style="--hc:${heroColor(h)}">${esc(h)}</button>`).join(" ")}</p>`
+      : waiting ? `<p><b>${esc(me)}</b> est enregistré. Tous les héros que tu joues apparaîtront ici après le prochain relevé (20 h, 2 h ou 13 h).</p>`
+      : `<p>Saisis ton pseudo Fellowship Logs ci-dessus puis clique sur « Suivre mon pseudo ». Tous les héros que tu joues seront relevés dans tes derniers logs (à 20 h, 2 h et 13 h) et comparés à tes builds objectifs.</p>
          <p class="note">Ton build objectif se règle dans l'onglet « Mon build objectif ». Seuls les logs publiés sur Fellowship Logs sont lisibles.</p>`}</section>`;
   } else {
     // Talents
@@ -831,7 +841,7 @@ function renderCmp(){
     ${DATA.form?`<div class="pb-row">
       <label for="pseudo">Mon pseudo</label>
       <input id="pseudo" type="text" maxlength="24" placeholder="Pseudo Fellowship Logs" value="${esc(me)}" autocomplete="nickname">
-      <button type="button" class="btn primary" data-act="follow">Suivre ce héros</button>
+      <button type="button" class="btn primary" data-act="follow">Suivre mon pseudo</button>
       <span class="fstat">${followStatus()}</span><span id="saved" class="saved" aria-live="polite"></span>
     </div>`:""}
     <div class="pb-row">
@@ -863,6 +873,7 @@ document.addEventListener("click", e => {
   const t = e.target.closest(".tab"); if(t && !t.disabled){ location.hash = t.dataset.h; return; }
   const m = e.target.closest(".mode"); if(m){ mode = m.dataset.mode; try{ localStorage.setItem("mode", mode); }catch(err){} render(); return; }
   if(mode === "cmp" && e.target.closest("[data-act=follow]")){ doFollow(); return; }
+  const hl = e.target.closest(".herolink"); if(hl){ location.hash = hl.dataset.h; return; }
   if(mode === "plan"){ const a = e.target.closest("[data-act]"); if(a && !a.disabled) planClick(a); return; }
   const c = e.target.closest(".chip"); if(c){ enc = c.dataset.e; render(); }
 });
