@@ -43,7 +43,9 @@ def form_players():
         if len(r) < 3:
             continue
         nom, heros = r[1].strip(), r[2].strip().capitalize()
-        if not PSEUDO_OK.match(nom) or heros not in KNOWN_HEROES:
+        if heros not in KNOWN_HEROES:
+            heros = None                          # "Tous" : tous les heros joues par ce pseudo
+        if not PSEUDO_OK.match(nom):
             continue
         key = (nom.lower(), heros)
         if key in seen:
@@ -51,7 +53,8 @@ def form_players():
         seen.add(key)
         out.append({"nom": nom, "heros": heros, "source": "site"})
     return out[: int(cfg.get("max_joueurs", 100))]
-MAX_REPORTS = 5
+MAX_REPORTS = 10   # logs recents parcourus par joueur
+MAX_FIGHTS = 40    # combats lus au maximum par joueur (quota de l'API)
 
 
 def recent_reports(client, nom):
@@ -76,25 +79,35 @@ def report_fights(client, code):
     return out
 
 
-def find_build(client, nom, heros):
+def find_builds(client, nom, heros=None):
+    """Dernier build de chaque heros joue par `nom` dans ses logs recents (ou du seul `heros` demande)."""
     reports = recent_reports(client, nom)
     if reports is None:
-        return {"erreur": "joueur introuvable sur Fellowship Logs"}
+        return [], "joueur introuvable sur Fellowship Logs"
+    found, vus = {}, 0
     for rep in reports:
         info = report_fights(client, rep["code"])
         for f in sorted(info["fights"], key=lambda f: -(f.get("startTime") or 0)):
+            if vus >= MAX_FIGHTS:
+                break
+            vus += 1
             players = fetch_fight_players(client, rep["code"], f["id"])
             for lst in players.values():
                 for p in lst or []:
-                    if p.get("name") != nom or not p.get("combatantInfo"):
+                    h = p.get("type")
+                    if p.get("name") != nom or not p.get("combatantInfo") or h in found:
                         continue
-                    if heros and p.get("type") != heros:
+                    if heros and h != heros:
                         continue
-                    return {"heros": p.get("type"), "report": rep["code"], "fight": f["id"],
-                            "encounter": f.get("encounterID"),
-                            "date": (info.get("startTime") or 0) + (f.get("startTime") or 0),
-                            "info": p["combatantInfo"]}
-    return {"erreur": "aucun combat de donjon trouvé dans les derniers logs" + (f" avec {heros}" if heros else "")}
+                    found[h] = {"heros": h, "report": rep["code"], "fight": f["id"],
+                                "encounter": f.get("encounterID"),
+                                "date": (info.get("startTime") or 0) + (f.get("startTime") or 0),
+                                "info": p["combatantInfo"]}
+            if heros and heros in found:
+                return list(found.values()), None
+    if not found:
+        return [], "aucun combat de donjon trouvé dans les derniers logs" + (f" avec {heros}" if heros else "")
+    return list(found.values()), None
 
 
 def main():
@@ -113,15 +126,22 @@ def main():
         print("Aucun joueur a suivre"); return
     client = Client(os.environ["FELLOWSHIP_CLIENT_ID"], os.environ["FELLOWSHIP_CLIENT_SECRET"])
     out = []
+    # un pseudo inscrit sans heros couvre tous ses heros : inutile de le chercher aussi heros par heros
+    tous = {j["nom"].lower() for j in liste if not j.get("heros")}
+    liste = [j for j in liste if not j.get("heros") or j["nom"].lower() not in tous]
+    now = int(time.time() * 1000)
     for j in liste:
         nom, heros = j.get("nom"), j.get("heros")
         try:
-            res = find_build(client, nom, heros)
+            builds, err = find_builds(client, nom, heros)
         except Exception as e:  # un joueur en erreur ne bloque pas les autres
-            res = {"erreur": f"erreur API : {str(e)[:200]}"}
-        res.update({"nom": nom, "heros": res.get("heros") or heros, "releve": int(time.time() * 1000)})
-        print(f"{nom} ({res.get('heros')}) : {res.get('erreur') or 'build trouve'}")
-        out.append(res)
+            builds, err = [], f"erreur API : {str(e)[:200]}"
+        if err:
+            out.append({"nom": nom, "heros": heros, "erreur": err, "releve": now})
+        for res in builds:
+            res.update({"nom": nom, "releve": now})
+            out.append(res)
+        print(f"{nom} : {err or ', '.join(r['heros'] for r in builds)}")
     OUT_DIR.mkdir(exist_ok=True)
     (OUT_DIR / "joueurs_suivis.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
 
