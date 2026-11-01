@@ -120,6 +120,7 @@ table.cmp td{vertical-align:middle}
 .btn:disabled{opacity:.5;cursor:default}
 .btn.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:600}
 .fstat{font-size:13px;color:var(--mute);display:inline-flex;gap:8px;align-items:center}
+.pb-row .score{margin-left:12px;flex:1 1 320px}
 .score{display:flex;align-items:center;gap:12px;font-size:14px}
 .score .sbar{flex:0 1 260px;height:10px;background:var(--track);border-radius:5px;overflow:hidden}
 .score .sbar div{height:100%;background:var(--core)}
@@ -613,6 +614,7 @@ function renderPlan(){
   $("#app").innerHTML = `
   <div class="hero-head"><h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}</div>
   <section class="panel full planbar">
+    <span class="infoi corner" tabindex="0" role="img" aria-label="Où sont enregistrés tes builds" data-info="${esc("Tes builds sont enregistrés automatiquement dans ce navigateur, sur cet appareil. Pour les retrouver ailleurs, utilise Exporter puis Importer.\n\nPour voir ce qui te manque par rapport à ton vrai build, va dans l'onglet « Suivre mon build ».")}">i</span>
     <div class="pb-row">
       <label for="buildSel">Build</label>
       <select id="buildSel">${Object.entries(S.builds).map(([id,b])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(b.name)}</option>`).join("")}</select>
@@ -634,7 +636,7 @@ function renderPlan(){
     ${planUi.imp?`<div class="pb-box"><label for="impCode">Colle un code de build exporté :</label>
       <textarea id="impCode" rows="3" placeholder="Code du build"></textarea><button type="button" class="btn" data-act="imp-go">Importer ce build</button></div>`:""}
     ${planUi.msg?`<p class="pb-msg">${esc(planUi.msg)}</p>`:""}
-    <p class="note">Tes builds sont enregistrés automatiquement dans ce navigateur, sur cet appareil. Pour les retrouver ailleurs, utilise Exporter puis Importer.${DATA.form?` Pour voir ce qui te manque par rapport à ton vrai build, va dans l'onglet « Suivre mon build ».`:""}</p>
+
   </section>
   <div class="grid">
     <section class="panel full">
@@ -781,9 +783,17 @@ function refreshButton(){
   if(wait > 0){
     const at = new Date(lastRefresh() + REFRESH_MS).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
     const asked = Date.now() - lastRefresh() < 25*60*1000;
-    return `<button type="button" class="btn" disabled>Actualiser maintenant</button><span class="fstat">${asked?"Demande en cours, relevé d'ici 15 à 20 min. ":""}Nouvelle demande possible à ${at}</span>`;
+    return `<button type="button" class="btn" disabled title="Nouvelle demande possible à ${at}">Actualiser maintenant</button>`;
   }
   return `<button type="button" class="btn" data-act="refresh">Actualiser maintenant</button>`;
+}
+function refreshInfo(){
+  const me = getPseudo(); if(!me || !isFollowed(me, hero)) return [];
+  const out = [], since = Date.now() - lastRefresh();
+  if(since < 25*60*1000) out.push("Demande d'actualisation en cours : relevé d'ici 15 à 20 minutes.");
+  if(since < REFRESH_MS) out.push(`Nouvelle demande possible à ${new Date(lastRefresh() + REFRESH_MS).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}.`);
+  const ls = lastSeen(); if(ls) out.push(ls + ".");
+  return out;
 }
 function lastSeen(){
   const rows = playerRows(getPseudo()); if(!rows.length) return "";
@@ -878,6 +888,7 @@ function renderCmp(){
     "Ton build est relevé dans ton dernier log publié sur Fellowship Logs : le donjon le plus récent joué avec ce héros.",
     "Il est relu à 20 h, 2 h et 13 h, ou sur demande avec « Actualiser maintenant ».",
     b ? `Build actuel : log du ${when}${donjon?` · ${donjon}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}.` : "",
+    ...refreshInfo(),
     "L'objectif vient de « Mon build objectif », enregistré dans ce navigateur."].filter(Boolean).join("\n\n");
   $("#app").innerHTML = head + `
   <section class="panel full planbar">
@@ -886,15 +897,14 @@ function renderCmp(){
       <label for="pseudo">Mon pseudo</label>
       <input id="pseudo" type="text" maxlength="24" placeholder="Pseudo Fellowship Logs" value="${esc(me)}" autocomplete="nickname">
       <button type="button" class="btn primary" data-act="follow">Suivre mon pseudo</button>
-      <span class="fstat">${followStatus()}</span><span id="saved" class="saved" aria-live="polite"></span>
-    </div>
-    ${getPseudo() && isFollowed(getPseudo(), hero) ? `<div class="pb-row">${refreshButton()}<span class="fstat">${lastSeen()}</span></div>` : ""}`:""}
+      <span class="fstat">${followStatus()}</span>
+      ${refreshButton()}<span id="saved" class="saved" aria-live="polite"></span>
+    </div>`:""}
     <div class="pb-row">
       <label for="cmpBuild">Objectif</label>
       <select id="cmpBuild">${Object.entries(S.builds).map(([id,x])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(x.name)}</option>`).join("")}</select>
+      ${b?`<div class="score"><div class="sbar"><div style="width:${pctOk}%"></div></div><b>${ok} / ${tot}</b> objectifs atteints (${pctOk} %)</div>`:""}
     </div>
-    ${b?`<div class="score"><div class="sbar"><div style="width:${pctOk}%"></div></div><b>${ok} / ${tot}</b> objectifs atteints (${pctOk} %)</div>
-`:""}
   </section>${body}`;
 }
 
