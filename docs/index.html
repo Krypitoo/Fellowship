@@ -804,10 +804,9 @@ function renderCmp(){
   const A = DATA.heroes[hero].all, S = heroStore(), B = S.builds[S.cur];
   const all = DATA.players || [], mine = all.filter(p => p.heros === hero);
   const me = getPseudo(), mineMe = mine.find(p => p.nom.toLowerCase() === me.toLowerCase());
-  if(!mine.find(p => p.nom === cmpUi.player)) cmpUi.player = mineMe ? mineMe.nom : "";
+  cmpUi.player = mineMe ? mineMe.nom : "";   // chacun ne voit que son propre build
   const P0 = mine.find(p => p.nom === cmpUi.player);
   const head = `<div class="hero-head"><h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}</div>`;
-  const others = mine.filter(p => p !== mineMe);
   const b = P0 && P0.build;
   const when = P0 && P0.date ? new Date(P0.date).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) : "";
   const donjon = P0 && P0.encounter ? (DATA.encounters[String(P0.encounter)] || "") : "";
@@ -877,8 +876,6 @@ function renderCmp(){
     <div class="pb-row">
       <label for="cmpBuild">Objectif</label>
       <select id="cmpBuild">${Object.entries(S.builds).map(([id,x])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(x.name)}</option>`).join("")}</select>
-      ${others.length?`<label for="cmpPlayer">Voir</label>
-      <select id="cmpPlayer"><option value="${mineMe?esc(mineMe.nom):""}">${mineMe?esc(mineMe.nom)+" (moi)":"Mon build"}</option>${others.map(p=>`<option value="${esc(p.nom)}"${p.nom===cmpUi.player?" selected":""}>${esc(p.nom)}</option>`).join("")}</select>`:""}
     </div>
     ${b?`<div class="score"><div class="sbar"><div style="width:${pctOk}%"></div></div><b>${ok} / ${tot}</b> objectifs atteints (${pctOk} %)</div>
     <p class="note">Build de ${esc(P0.nom)} relevé dans le log du ${when}${donjon?` · ${esc(donjon)}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}. L'objectif vient de « Mon build objectif » (enregistré dans ce navigateur).</p>`:""}
