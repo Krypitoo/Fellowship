@@ -311,6 +311,8 @@ def main():
     ap.add_argument("-o", "--out", default="index.html")
     ap.add_argument("--joueurs", metavar="FICHIER",
                     help="builds des joueurs suivis (resultats/joueurs_suivis.json)")
+    ap.add_argument("--joueurs-maj", metavar="FICHIER",
+                    help="actualise seulement les joueurs presents dans ce fichier (le reste est garde)")
     ap.add_argument("--fragment", action="store_true",
                     help="sans <html>/<head> (pour une publication sur Claude)")
     args = ap.parse_args()
@@ -325,6 +327,11 @@ def main():
     if args.joueurs and Path(args.joueurs).exists():
         data["players"] = load_players(args.joueurs)
         print(f"Joueurs suivis : {len(data['players'])}")
+    if args.joueurs_maj and Path(args.joueurs_maj).exists():
+        maj = load_players(args.joueurs_maj)
+        noms = {p["nom"].lower() for p in maj}
+        data["players"] = [p for p in data.get("players", []) if p["nom"].lower() not in noms] + maj
+        print(f"Joueurs actualises : {len(noms)}")
     render(data, Path(args.out), args.fragment)
 
 

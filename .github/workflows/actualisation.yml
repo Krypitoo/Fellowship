@@ -1,0 +1,74 @@
+name: Actualisation a la demande
+
+# Toutes les 15 minutes : traite les demandes "Actualiser" envoyees depuis le site
+# (et les nouvelles inscriptions). Ne fait rien, en quelques secondes, s'il n'y a pas de demande.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mise-a-jour
+  cancel-in-progress: false
+
+jobs:
+  demandes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: cache
+          key: api-cache-${{ github.run_id }}
+          restore-keys: api-cache-
+
+      - name: Demandes d'actualisation
+        id: dem
+        env:
+          FELLOWSHIP_CLIENT_ID: ${{ secrets.FELLOWSHIP_CLIENT_ID }}
+          FELLOWSHIP_CLIENT_SECRET: ${{ secrets.FELLOWSHIP_CLIENT_SECRET }}
+        run: python suivre_joueurs.py --demandes
+
+      - uses: actions/cache/save@v4
+        if: steps.dem.outputs.a_faire == 'true'
+        with:
+          path: cache
+          key: api-cache-${{ github.run_id }}
+
+      - name: Mise a jour du site
+        if: steps.dem.outputs.a_faire == 'true'
+        run: python build_site.py --from-html docs/index.html --joueurs-maj resultats/joueurs_maj.json -o docs/index.html
+
+      - name: Publication
+        env:
+          REGEN: "python build_site.py --from-html docs/index.html --joueurs-maj resultats/joueurs_maj.json -o docs/index.html"
+        run: |
+          git config user.name "maj-auto"
+          git config user.email "maj-auto@users.noreply.github.com"
+          publier() {
+            git add docs/index.html etat_demandes.json 2>/dev/null || true
+            git diff --cached --quiet && return 0
+            git commit -q -m "Actualisation a la demande $(date -u +%F\ %Hh%M)"
+          }
+          cp etat_demandes.json /tmp/etat.json 2>/dev/null || true
+          publier
+          for essai in 1 2 3; do
+            git pull --rebase -q && git push -q && exit 0
+            git rebase --abort 2>/dev/null || true
+            git fetch -q origin main && git reset -q --hard origin/main
+            cp /tmp/etat.json etat_demandes.json 2>/dev/null || true
+            if [ -f resultats/joueurs_maj.json ]; then eval "$REGEN"; fi
+            publier
+          done
+          exit 1

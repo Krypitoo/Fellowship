@@ -27,17 +27,30 @@ FORM = HERE / "formulaire.json"            # pseudos envoyes depuis le site (for
 PSEUDO_OK = re.compile(r"^[^\W_][\w' .-]{1,23}$", re.UNICODE)
 
 
-def form_players():
-    """Pseudos saisis sur le site : le plus recent d'abord, un seul par pseudo, format verifie."""
+ETAT = HERE / "etat_demandes.json"       # demandes d'actualisation deja traitees
+DELAI_MIN_MS = 3600 * 1000                 # une actualisation par pseudo et par heure au plus
+ACTUALISER = "Actualiser"
+
+
+def form_rows():
     if not FORM.exists():
-        return []
+        return None
     cfg = json.loads(FORM.read_text(encoding="utf-8"))
     try:
         raw = urllib.request.urlopen(cfg["reponses_csv"], timeout=30).read().decode("utf-8")
     except Exception as e:
         print(f"Formulaire illisible : {e}")
+        return None
+    return list(csv.reader(io.StringIO(raw)))[1:], cfg
+
+
+def form_players():
+    """Pseudos saisis sur le site : le plus recent d'abord, un seul par pseudo, format verifie."""
+    got = form_rows()
+    if not got:
         return []
-    rows = list(csv.reader(io.StringIO(raw)))[1:]
+    rows, cfg = got
+    rows = [r for r in rows if len(r) >= 3 and r[2].strip() != ACTUALISER]
     seen, out = set(), []
     for r in reversed(rows):                      # les reponses les plus recentes en premier
         if len(r) < 3:
@@ -110,9 +123,63 @@ def find_builds(client, nom, heros=None):
     return list(found.values()), None
 
 
+def demandes(client_factory):
+    """Mode --demandes : traite les nouvelles lignes du formulaire (demandes d'actualisation
+    et nouvelles inscriptions) depuis le dernier passage. Ecrit resultats/joueurs_maj.json."""
+    etat = json.loads(ETAT.read_text(encoding="utf-8")) if ETAT.exists() else {"lignes": None, "dernier": {}}
+    got = form_rows()
+    if not got:
+        return False
+    rows, _ = got
+    if etat.get("lignes") is None:          # premier passage : on part de la fin, sans tout retraiter
+        etat["lignes"] = len(rows)
+        ETAT.write_text(json.dumps(etat, ensure_ascii=False, indent=1), encoding="utf-8")
+        print("Etat initialise"); return False
+    nouvelles = rows[etat["lignes"]:]
+    etat["lignes"] = len(rows)
+    now = int(time.time() * 1000)
+    noms = []
+    for r in nouvelles:
+        if len(r) < 2 or not PSEUDO_OK.match(r[1].strip()):
+            continue
+        nom = r[1].strip()
+        if now - etat["dernier"].get(nom.lower(), 0) < DELAI_MIN_MS:
+            print(f"{nom} : deja actualise il y a moins d'une heure"); continue
+        if nom.lower() not in {n.lower() for n in noms}:
+            noms.append(nom)
+    noms = noms[:20]                        # au plus 20 joueurs par passage (quota de l'API)
+    if not noms:
+        ETAT.write_text(json.dumps(etat, ensure_ascii=False, indent=1), encoding="utf-8")
+        print("Aucune demande a traiter"); return False
+    client = client_factory()
+    out = []
+    for nom in noms:
+        try:
+            builds, err = find_builds(client, nom)
+        except Exception as e:
+            builds, err = [], f"erreur API : {str(e)[:200]}"
+        if err:
+            out.append({"nom": nom, "heros": None, "erreur": err, "releve": now})
+        for res in builds:
+            res.update({"nom": nom, "releve": now}); out.append(res)
+        etat["dernier"][nom.lower()] = now
+        print(f"{nom} : {err or ', '.join(r['heros'] for r in builds)}")
+    OUT_DIR.mkdir(exist_ok=True)
+    (OUT_DIR / "joueurs_maj.json").write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
+    ETAT.write_text(json.dumps(etat, ensure_ascii=False, indent=1), encoding="utf-8")
+    return True
+
+
 def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if "--demandes" in sys.argv:
+        fait = demandes(lambda: Client(os.environ["FELLOWSHIP_CLIENT_ID"], os.environ["FELLOWSHIP_CLIENT_SECRET"]))
+        out = os.environ.get("GITHUB_OUTPUT")
+        if out:
+            with open(out, "a") as f:
+                f.write(f"a_faire={'true' if fait else 'false'}\n")
+        return
     liste = json.loads(LISTE.read_text(encoding="utf-8")) if LISTE.exists() else []
     connus = {(j["nom"].lower(), j.get("heros")) for j in liste}
     for j in form_players():
