@@ -506,7 +506,7 @@ function render(){
 
     <section class="panel">
       <h2>Bénédictions</h2>
-      ${heatTable(A.blessings,"Bénédiction")}
+      ${heatTable(A.blessings.filter(x => x.pct >= 10),"Bénédiction")}
       <p class="note">Colonnes : niveau total de la bénédiction sur l'équipement, et nombre de builds à ce niveau.</p>
     </section>
 
@@ -677,7 +677,7 @@ function renderPlan(){
 
     <section class="panel">
       <h2>Bénédictions visées</h2>
-      ${listWith(A.blessings,B.blessings).map(n=>stepper("blessings",n,B.blessings[n]||0,refB(n))).join("")}
+      ${listWith(A.blessings.filter(x=>x.pct>=10),B.blessings).map(n=>stepper("blessings",n,B.blessings[n]||0,refB(n))).join("")}
       <p class="note">Rang ou niveau total visé sur l'équipement. « – » : non pris.</p>
     </section>
 
