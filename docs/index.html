@@ -98,6 +98,19 @@ td.n small{color:var(--mute)}
 .it.leg{color:var(--legend)}
 .note{color:var(--mute);font-size:12.5px;margin:8px 0 0}
 .empty{color:var(--mute);font-size:14px;margin:0}
+.st{display:inline-block;font:600 12px var(--mono);padding:2px 8px;border-radius:999px;white-space:nowrap}
+.st.ok{background:color-mix(in srgb,var(--core) 18%,var(--panel));color:var(--core)}
+.st.miss{background:color-mix(in srgb,var(--legend) 18%,var(--panel));color:var(--legend)}
+.st.extra{background:var(--track);color:var(--mute)}
+table.cmp td{vertical-align:middle}
+.ctile.ok{border-color:var(--core);background:color-mix(in srgb,var(--core) 14%,var(--panel))}
+.ctile.miss{border-color:var(--legend);background:color-mix(in srgb,var(--legend) 12%,var(--panel))}
+.ctile.miss .cnt{color:var(--legend);font-weight:600} .ctile.ok .cnt{color:var(--core);font-weight:600}
+.ctile.extra .nm{text-decoration:line-through;color:var(--mute)}
+.ctile.off{opacity:.4}
+.score{display:flex;align-items:center;gap:12px;font-size:14px}
+.score .sbar{flex:0 1 260px;height:10px;background:var(--track);border-radius:5px;overflow:hidden}
+.score .sbar div{height:100%;background:var(--core)}
 .modes{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
 .mode{font:500 13.5px var(--body);border:0;background:none;color:var(--ink);padding:7px 14px;cursor:pointer}
 .mode+.mode{border-left:1px solid var(--line)}
@@ -406,6 +419,7 @@ function renderTabs(){
 
 function render(){
   if(mode === "plan") return renderPlan();
+  if(mode === "cmp") return renderCmp();
   const H = DATA.heroes[hero];
   const A = enc === "all" ? H.all : H.byEncounter[enc];
   const encs = Object.keys(H.byEncounter);
@@ -564,7 +578,8 @@ const curBuild = () => { const S = heroStore(); return S.builds[S.cur]; };
 function modeSwitch(){
   return `<div class="modes" role="tablist" aria-label="Affichage">
     <button type="button" class="mode" data-mode="stats" aria-selected="${mode==="stats"}">Analyse du top 30</button>
-    <button type="button" class="mode" data-mode="plan" aria-selected="${mode==="plan"}">Mon build objectif</button></div>`;
+    <button type="button" class="mode" data-mode="plan" aria-selected="${mode==="plan"}">Mon build objectif</button>
+    <button type="button" class="mode" data-mode="cmp" aria-selected="${mode==="cmp"}">Comparer</button></div>`;
 }
 function stepper(group, name, val, ref){
   return `<div class="prow${val>0?" on":""}"><span class="nmc">${ic(name)}<span class="pn">${esc(name)}</span></span>
@@ -716,6 +731,92 @@ document.addEventListener("change", e => {
   if(mode === "plan" && e.target.id === "buildSel"){ heroStore().cur = e.target.value; planUi = {exp:false,imp:false,del:false,msg:""}; saveStore(); renderPlan(); }
 });
 
+// ======================= Mode « Comparer » : build réel d'un joueur suivi vs build objectif =======================
+let cmpUi = {player:""};
+const tierOf = p => { let t = 0; TIER_POW.forEach((v,i)=>{ if(p >= v && v > 0) t = i; }); return t; };
+const chip = (cls, txt) => `<span class="st ${cls}">${txt}</span>`;
+
+function renderCmp(){
+  const A = DATA.heroes[hero].all, S = heroStore(), B = S.builds[S.cur];
+  const all = DATA.players || [], mine = all.filter(p => p.heros === hero);
+  if(!mine.find(p => p.nom === cmpUi.player)) cmpUi.player = mine[0] ? mine[0].nom : "";
+  const P0 = mine.find(p => p.nom === cmpUi.player);
+  const head = `<div class="hero-head"><h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}</div>`;
+  if(!mine.length){
+    const others = all.filter(p=>p.heros && p.build).map(p=>`${esc(p.nom)} (${esc(p.heros)})`).join(", ");
+    $("#app").innerHTML = head + `<section class="panel full"><h2>Comparer</h2>
+      <p>Aucun joueur suivi ne joue ${esc(hero)} pour l'instant.</p>
+      ${others?`<p class="note">Joueurs suivis sur d'autres héros : ${others}.</p>`:""}
+      <p class="note">Les joueurs suivis sont listés dans le fichier <code>joueurs.json</code> du site ; leur build est relu chaque nuit dans leurs derniers logs Fellowship Logs.</p></section>`;
+    return;
+  }
+  const b = P0 && P0.build;
+  const when = P0 && P0.date ? new Date(P0.date).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) : "";
+  const donjon = P0 && P0.encounter ? (DATA.encounters[String(P0.encounter)] || "") : "";
+  let ok = 0, tot = 0; const count = c => { tot++; if(c) ok++; return c; };
+  let body = "";
+  if(!b){
+    body = `<section class="panel full"><h2>Build introuvable</h2><p>${esc((P0&&P0.erreur)||"Pas encore de données pour ce joueur.")}</p>
+      <p class="note">Le build est relu chaque nuit dans les derniers logs publiés sur Fellowship Logs.</p></section>`;
+  } else {
+    // Talents
+    const tl = talentList(A);
+    const tiles = tl.map(t => { const want = B.talents.includes(t.name), has = b.talents.includes(t.name);
+      const cls = want&&has?"ok":want?"miss":has?"extra":"off"; if(want) count(has);
+      const lab = want&&has?"✓ pris":want?"à prendre":has?"pas dans l'objectif":"";
+      return `<div class="tile ctile ${cls}"><div class="icw">${ic(t.name,"lg")}</div><div class="tx"><div class="nm">${esc(t.name)}</div><div class="cnt">${lab}</div></div></div>`; }).join("");
+    // Stats
+    const srows = STAT_KEYS.map(k => { const cur = b.stats[k], tgt = B.stats[k]; if(tgt==null || cur==null) return "";
+      const d = cur - tgt, good = count(Math.abs(d) <= 5);
+      return `<tr><td>${STAT_FR[k]}</td><td class="n"><b>${fr(cur)}</b> <small>${fr(b.pct[k],1)} %</small></td><td class="n">${fr(tgt)}</td><td class="n">${good?chip("ok","✓"):chip(d<0?"miss":"extra",(d>0?"+":"−")+fr(Math.abs(d)))}</td></tr>`; }).join("");
+    // Gemmes
+    const grows = GEM_ORDER.map(k => { const tgt = B.gems[k]; if(tgt==null) return ""; const cur = b.gems[k]||0, ct = tierOf(cur);
+      const good = count(ct >= tgt);
+      return `<tr><td><span class="dot" style="background:${GEM[k][1]}"></span>${GEM[k][0]}</td><td class="n"><b>${fr(cur)}</b> <small>${TIER_LAB[ct]}</small></td><td class="n">${TIER_LAB[tgt]}</td><td class="n">${good?chip("ok","✓"):chip("miss","palier "+TIER_LAB[tgt])}</td></tr>`; }).join("");
+    // Rangs (aspects, sigils, benedictions)
+    const rankRows = (target, current, unit) => Object.keys(target).map(n => { const want = target[n], cur = current[n]||0, good = count(cur >= want);
+      return `<tr><td><span class="nmc">${ic(n)}${esc(n)}</span></td><td class="n"><b>${cur||"–"}</b></td><td class="n">${want}</td><td class="n">${good?chip("ok","✓"):chip("miss",`manque ${want-cur} ${unit}${want-cur>1?"s":""}`)}</td></tr>`; }).join("")
+      || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`;
+    const tbl = (head, rows) => `<div class="scroll"><table class="cmp"><thead><tr><th>${head}</th><th class="n">Actuel</th><th class="n">Objectif</th><th class="n">Statut</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    // Legendaire, effet, cou
+    const one = (lab, want, has) => { if(!want) return ""; const good = count(has.includes(want));
+      return `<tr><td>${lab}</td><td>${has.length?has.map(x=>`<span class="nmc">${ic(x)}${esc(x)}</span>`).join(" "):"–"}</td><td><span class="nmc">${ic(want)}${esc(want)}</span></td><td class="n">${good?chip("ok","✓"):chip("miss","à obtenir")}</td></tr>`; };
+    const neckRows = B.neck.map(n => { const good = count(b.neck.includes(n));
+      return `<tr><td>Cou</td><td>${b.neck.includes(n)?`<span class="nmc">${ic(n)}${esc(n)}</span>`:"–"}</td><td><span class="nmc">${ic(n)}${esc(n)}</span></td><td class="n">${good?chip("ok","✓"):chip("miss","à choisir")}</td></tr>`; }).join("");
+    const misc = one("Légendaire", B.legendary, b.legendary) + one("Effet spécial", B.special, b.special) + neckRows;
+    body = `
+    <div class="grid">
+      <section class="panel full"><h2>Talents</h2><div class="tgrid${TALENT_LAYOUT[hero]?" game":""}">${tiles}</div>
+        <p class="note">Vert : pris comme prévu. Orange : prévu dans l'objectif mais pas pris. Gris barré : pris mais pas dans l'objectif.</p></section>
+      <section class="panel"><h2>Stats secondaires</h2>${tbl("Stat", srows || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`)}
+        <p class="note">Atteint à ±5 près. Écart en valeur brute.</p></section>
+      <section class="panel"><h2>Gemmes</h2>${tbl("Couleur", grows || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`)}</section>
+      <section class="panel"><h2>Aspects</h2>${tbl("Aspect", rankRows(B.aspects, b.traits, "rang"))}</section>
+      <section class="panel"><h2>Sigils</h2>${tbl("Sigil", rankRows(B.sigils, b.traits, "rang"))}</section>
+      <section class="panel"><h2>Bénédictions</h2>${tbl("Bénédiction", rankRows(B.blessings, b.blessings, "niveau"))}</section>
+      <section class="panel"><h2>Légendaire et cou</h2><div class="scroll"><table class="cmp"><thead><tr><th></th><th>Actuel</th><th>Objectif</th><th class="n">Statut</th></tr></thead><tbody>${misc || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`}</tbody></table></div></section>
+    </div>`;
+  }
+  const pctOk = tot ? Math.round(100*ok/tot) : 0;
+  $("#app").innerHTML = head + `
+  <section class="panel full planbar">
+    <div class="pb-row">
+      <label for="cmpPlayer">Joueur</label>
+      <select id="cmpPlayer">${mine.map(p=>`<option value="${esc(p.nom)}"${p.nom===cmpUi.player?" selected":""}>${esc(p.nom)}</option>`).join("")}</select>
+      <label for="cmpBuild">Objectif</label>
+      <select id="cmpBuild">${Object.entries(S.builds).map(([id,x])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(x.name)}</option>`).join("")}</select>
+    </div>
+    ${b?`<div class="score"><div class="sbar"><div style="width:${pctOk}%"></div></div><b>${ok} / ${tot}</b> objectifs atteints (${pctOk} %)</div>
+    <p class="note">Build relevé dans le log du ${when}${donjon?` · ${esc(donjon)}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}. L'objectif vient de « Mon build objectif » (enregistré dans ce navigateur).</p>`:""}
+  </section>${body}`;
+}
+
+document.addEventListener("change", e => {
+  if(mode !== "cmp") return;
+  if(e.target.id === "cmpPlayer"){ cmpUi.player = e.target.value; renderCmp(); }
+  if(e.target.id === "cmpBuild"){ heroStore().cur = e.target.value; saveStore(); renderCmp(); }
+});
+
 function select(h){
   if(!DATA.heroes[h]) h = heroOrder().find(x=>DATA.heroes[x]);
   if(h !== hero){ enc = "all"; planUi = {exp:false,imp:false,del:false,msg:""}; }
@@ -825,7 +926,7 @@ document.getElementById("themeBtn").addEventListener("click", () => {
 (function init(){
   const d = new Date(DATA.generated);
   $("#foot").innerHTML = `Mis à jour le ${d.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"})} à ${d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})} · Données : classements Fellowship Logs (top 30 par héros et par donjon), médianes sans pondération.`;
-  try{ mode = localStorage.getItem("mode") === "plan" ? "plan" : "stats"; }catch(e){}
+  try{ const m = localStorage.getItem("mode"); mode = (m === "plan" || m === "cmp") ? m : "stats"; }catch(e){}
   let start = decodeURIComponent(location.hash.slice(1));
   if(!DATA.heroes[start]){ try{ start = localStorage.getItem("hero") || ""; }catch(e){ start = ""; } }
   select(start || "Helena");
