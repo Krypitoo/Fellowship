@@ -294,12 +294,12 @@ def profile(b):
         for t in g.get("traits") or []:
             if t.get("name") and not is_ench(clean(t["name"])):
                 tr[clean(t["name"])] += t.get("rank", 1)
-    for nm, tot in weapon_tree(b).items():
-        if not is_ench(nm):
-            tr[nm] += tot
         for x in g.get("blessings") or []:
             if x.get("name"):
                 bl[x["name"]] += x.get("level", 1)
+    for nm, tot in weapon_tree(b).items():
+        if not is_ench(nm):
+            tr[nm] += tot
     lv = [g.get("itemLevel") for g in gear(b) if g.get("itemLevel")]
     return {
         "talents": sorted({t["name"] for t in info.get("talents") or [] if t.get("name")}),
