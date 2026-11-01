@@ -239,9 +239,12 @@ def aggregate(builds):
             for x in g.get("blessings") or []:
                 if x.get("name"):
                     bl[x["name"]] += x.get("level", 1)
-        for a in b["info"].get("artifact") or []:
-            nm = clean(a.get("name") or "")
-            if nm and a.get("type") != 1024 and not is_ench(nm) and a.get("total", 0) >= 1:
+        # rangs donnes par l'arbre de l'arme : ils s'ajoutent a ceux de l'equipement (comme dans les logs)
+        for nm, tot in weapon_tree(b).items():
+            if is_ench(nm):
+                en[nm] += tot
+            else:
+                tr[nm] += tot
                 present.add(nm)
         trait_pres.update(present)
         present_pb.append(present)
@@ -260,6 +263,16 @@ def aggregate(builds):
     return A
 
 
+def weapon_tree(b):
+    """Rangs actifs dans l'arbre de l'arme (champ "artifact" du log, hors effets speciaux)."""
+    out = Counter()
+    for a in b["info"].get("artifact") or []:
+        nm = clean(a.get("name") or "")
+        if nm and a.get("type") != 1024 and a.get("total", 0) >= 1:
+            out[nm] += a["total"]
+    return out
+
+
 def profile(b):
     """Build d'un joueur sous forme simple, pour le comparer a un build objectif."""
     info = b["info"]
@@ -268,6 +281,9 @@ def profile(b):
         for t in g.get("traits") or []:
             if t.get("name") and not is_ench(clean(t["name"])):
                 tr[clean(t["name"])] += t.get("rank", 1)
+    for nm, tot in weapon_tree(b).items():
+        if not is_ench(nm):
+            tr[nm] += tot
         for x in g.get("blessings") or []:
             if x.get("name"):
                 bl[x["name"]] += x.get("level", 1)
