@@ -121,7 +121,7 @@ table.cmp td{vertical-align:middle}
 .pb-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
 .pb-row label{font:600 12px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
-#buildSel,#buildName,.pb-box textarea,.pstat input[type=number]{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+#buildSel,#cmpBuild,#cmpPlayer,#buildName,.pb-box textarea,.pstat input[type=number]{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
 #buildSel{min-width:160px} #buildName{flex:1;min-width:160px;max-width:320px}
 .btn{font:500 13px var(--body);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:6px 11px;cursor:pointer}
 .btn:hover{border-color:var(--accent)} .btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
@@ -579,7 +579,7 @@ function modeSwitch(){
   return `<div class="modes" role="tablist" aria-label="Affichage">
     <button type="button" class="mode" data-mode="stats" aria-selected="${mode==="stats"}">Analyse du top 30</button>
     <button type="button" class="mode" data-mode="plan" aria-selected="${mode==="plan"}">Mon build objectif</button>
-    <button type="button" class="mode" data-mode="cmp" aria-selected="${mode==="cmp"}">Comparer</button></div>`;
+    <button type="button" class="mode" data-mode="cmp" aria-selected="${mode==="cmp"}">Suivre mon build</button></div>`;
 }
 function stepper(group, name, val, ref){
   return `<div class="prow${val>0?" on":""}"><span class="nmc">${ic(name)}<span class="pn">${esc(name)}</span></span>
@@ -623,13 +623,7 @@ function renderPlan(){
     ${planUi.imp?`<div class="pb-box"><label for="impCode">Colle un code de build exporté :</label>
       <textarea id="impCode" rows="3" placeholder="Code du build"></textarea><button type="button" class="btn" data-act="imp-go">Importer ce build</button></div>`:""}
     ${planUi.msg?`<p class="pb-msg">${esc(planUi.msg)}</p>`:""}
-    ${DATA.form?`<div class="pb-row follow">
-      <label for="pseudo">Mon pseudo</label>
-      <input id="pseudo" type="text" maxlength="24" placeholder="Pseudo Fellowship Logs" value="${esc(getPseudo())}" autocomplete="nickname">
-      <button type="button" class="btn primary" data-act="follow">Suivre mon avancement</button>
-      <span class="fstat">${followStatus()}</span>
-    </div>`:""}
-    <p class="note">Tes builds sont enregistrés automatiquement dans ce navigateur, sur cet appareil. Pour les retrouver ailleurs, utilise Exporter puis Importer.${DATA.form?` Avec ton pseudo, ton build réel est relevé dans tes logs Fellowship Logs à 20 h, 2 h et 13 h, et l'onglet Comparer te montre ce qui te manque.`:""}</p>
+    <p class="note">Tes builds sont enregistrés automatiquement dans ce navigateur, sur cet appareil. Pour les retrouver ailleurs, utilise Exporter puis Importer.${DATA.form?` Pour voir ce qui te manque par rapport à ton vrai build, va dans l'onglet « Suivre mon build ».`:""}</p>
   </section>
   <div class="grid">
     <section class="panel full">
@@ -708,15 +702,6 @@ function planClick(t){
     case "del-no": planUi.del = false; renderPlan(); return;
     case "exp": planUi.exp = !planUi.exp; planUi.imp = false; renderPlan(); return;
     case "imp": planUi.imp = !planUi.imp; planUi.exp = false; renderPlan(); return;
-    case "follow": {
-      const nom = ($("#pseudo").value || "").trim();
-      if(!PSEUDO_RE.test(nom)){ flash("Pseudo invalide : 2 à 24 caractères, lettres, chiffres, espaces, . - '"); return; }
-      setPseudo(nom);
-      const body = new URLSearchParams({[DATA.form.champ_pseudo]: nom, [DATA.form.champ_heros]: hero});
-      fetch(DATA.form.envoi, {method:"POST", mode:"no-cors", body})
-        .then(() => { markFollowed(nom, hero); flash("Pseudo enregistré"); renderPlan(); })
-        .catch(() => flash("Envoi impossible : vérifie ta connexion et réessaie"));
-      return; }
     case "copy": { const ta=$("#expCode"); const done=()=>flash("Code copié");
       if(navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, ()=>{ ta.select(); flash("Sélectionné : Ctrl+C pour copier"); });
       else { ta.select(); flash("Sélectionné : Ctrl+C pour copier"); } return; }
@@ -756,13 +741,23 @@ const isFollowed = (n, h) => !!n && !!followed()[(n+"|"+h).toLowerCase()];
 function followStatus(){
   const n = getPseudo(); if(!n) return "";
   const p = (DATA.players||[]).find(x => x.nom.toLowerCase() === n.toLowerCase() && x.heros === hero);
-  if(p && p.build) return `<span class="st ok">Suivi actif</span> voir l'onglet Comparer`;
+  if(p && p.build) return `<span class="st ok">Suivi actif</span>`;
   if(p && p.erreur) return `<span class="st miss">${esc(p.erreur)}</span>`;
   if(isFollowed(n, hero)) return `<span class="st extra">En attente</span> relevé à la prochaine mise à jour (20 h, 2 h ou 13 h)`;
   return "";
 }
 
-// ======================= Mode « Comparer » : build réel d'un joueur suivi vs build objectif =======================
+function doFollow(){
+  const nom = ($("#pseudo").value || "").trim();
+  if(!PSEUDO_RE.test(nom)){ flash("Pseudo invalide : 2 à 24 caractères, lettres, chiffres, espaces, . - '"); return; }
+  setPseudo(nom); cmpUi.player = "";
+  const body = new URLSearchParams({[DATA.form.champ_pseudo]: nom, [DATA.form.champ_heros]: hero});
+  fetch(DATA.form.envoi, {method:"POST", mode:"no-cors", body})
+    .then(() => { markFollowed(nom, hero); render(); flash("Pseudo enregistré pour " + hero); })
+    .catch(() => flash("Envoi impossible : vérifie ta connexion et réessaie"));
+}
+
+// ======================= Mode « Suivre mon build » : build réel d'un joueur suivi vs build objectif =======================
 let cmpUi = {player:""};
 const tierOf = p => { let t = 0; TIER_POW.forEach((v,i)=>{ if(p >= v && v > 0) t = i; }); return t; };
 const chip = (cls, txt) => `<span class="st ${cls}">${txt}</span>`;
@@ -770,29 +765,23 @@ const chip = (cls, txt) => `<span class="st ${cls}">${txt}</span>`;
 function renderCmp(){
   const A = DATA.heroes[hero].all, S = heroStore(), B = S.builds[S.cur];
   const all = DATA.players || [], mine = all.filter(p => p.heros === hero);
-  const me = getPseudo().toLowerCase(), mineMe = mine.find(p => p.nom.toLowerCase() === me);
-  if(!cmpUi.player && mineMe) cmpUi.player = mineMe.nom;
-  if(!mine.find(p => p.nom === cmpUi.player)) cmpUi.player = mine[0] ? mine[0].nom : "";
+  const me = getPseudo(), mineMe = mine.find(p => p.nom.toLowerCase() === me.toLowerCase());
+  if(!mine.find(p => p.nom === cmpUi.player)) cmpUi.player = mineMe ? mineMe.nom : "";
   const P0 = mine.find(p => p.nom === cmpUi.player);
   const head = `<div class="hero-head"><h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}</div>`;
-  const waiting = isFollowed(getPseudo(), hero) && !mineMe;
-  if(!mine.length){
-    const others = all.filter(p=>p.heros && p.build).map(p=>`${esc(p.nom)} (${esc(p.heros)})`).join(", ");
-    $("#app").innerHTML = head + `<section class="panel full"><h2>Comparer</h2>
-      ${waiting?`<p><b>${esc(getPseudo())}</b> est enregistré pour ${esc(hero)} : ton build apparaîtra ici après la prochaine mise à jour (20 h, 2 h ou 13 h).</p>`
-        :`<p>Aucun joueur suivi ne joue ${esc(hero)} pour l'instant.</p>${DATA.form?`<p class="note">Pour suivre ton avancement : onglet « Mon build objectif », saisis ton pseudo puis « Suivre mon avancement ».</p>`:""}`}
-      ${others?`<p class="note">Joueurs suivis sur d'autres héros : ${others}.</p>`:""}
-      <p class="note">Les joueurs suivis sont listés dans le fichier <code>joueurs.json</code> du site ; leur build est relu chaque nuit dans leurs derniers logs Fellowship Logs.</p></section>`;
-    return;
-  }
+  const others = mine.filter(p => p !== mineMe);
   const b = P0 && P0.build;
   const when = P0 && P0.date ? new Date(P0.date).toLocaleDateString("fr-FR",{day:"numeric",month:"long"}) : "";
   const donjon = P0 && P0.encounter ? (DATA.encounters[String(P0.encounter)] || "") : "";
   let ok = 0, tot = 0; const count = c => { tot++; if(c) ok++; return c; };
   let body = "";
   if(!b){
-    body = `<section class="panel full"><h2>Build introuvable</h2><p>${esc((P0&&P0.erreur)||"Pas encore de données pour ce joueur.")}</p>
-      <p class="note">Le build est relu chaque nuit dans les derniers logs publiés sur Fellowship Logs.</p></section>`;
+    const waiting = me && isFollowed(me, hero) && !mineMe;
+    body = `<section class="panel full"><h2>${P0 ? "Build introuvable" : "Ton avancement"}</h2>${
+      P0 ? `<p>${esc(P0.erreur || "Pas encore de données pour ce joueur.")}</p><p class="note">Le build est relu à 20 h, 2 h et 13 h dans les derniers logs publiés sur Fellowship Logs.</p>`
+      : waiting ? `<p><b>${esc(me)}</b> est enregistré pour ${esc(hero)}. Ton build apparaîtra ici après le prochain relevé (20 h, 2 h ou 13 h).</p>`
+      : `<p>Saisis ton pseudo Fellowship Logs ci-dessus puis clique sur « Suivre ce héros ». Ton build réel sera relevé dans tes derniers logs (à 20 h, 2 h et 13 h) et comparé à ton build objectif.</p>
+         <p class="note">Ton build objectif se règle dans l'onglet « Mon build objectif ». Seuls les logs publiés sur Fellowship Logs sont lisibles.</p>`}</section>`;
   } else {
     // Talents
     const tl = talentList(A);
@@ -835,14 +824,20 @@ function renderCmp(){
   const pctOk = tot ? Math.round(100*ok/tot) : 0;
   $("#app").innerHTML = head + `
   <section class="panel full planbar">
+    ${DATA.form?`<div class="pb-row">
+      <label for="pseudo">Mon pseudo</label>
+      <input id="pseudo" type="text" maxlength="24" placeholder="Pseudo Fellowship Logs" value="${esc(me)}" autocomplete="nickname">
+      <button type="button" class="btn primary" data-act="follow">Suivre ce héros</button>
+      <span class="fstat">${followStatus()}</span><span id="saved" class="saved" aria-live="polite"></span>
+    </div>`:""}
     <div class="pb-row">
-      <label for="cmpPlayer">Joueur</label>
-      <select id="cmpPlayer">${mine.map(p=>`<option value="${esc(p.nom)}"${p.nom===cmpUi.player?" selected":""}>${esc(p.nom)}</option>`).join("")}</select>
       <label for="cmpBuild">Objectif</label>
       <select id="cmpBuild">${Object.entries(S.builds).map(([id,x])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(x.name)}</option>`).join("")}</select>
+      ${others.length?`<label for="cmpPlayer">Voir</label>
+      <select id="cmpPlayer"><option value="${mineMe?esc(mineMe.nom):""}">${mineMe?esc(mineMe.nom)+" (moi)":"Mon build"}</option>${others.map(p=>`<option value="${esc(p.nom)}"${p.nom===cmpUi.player?" selected":""}>${esc(p.nom)}</option>`).join("")}</select>`:""}
     </div>
     ${b?`<div class="score"><div class="sbar"><div style="width:${pctOk}%"></div></div><b>${ok} / ${tot}</b> objectifs atteints (${pctOk} %)</div>
-    <p class="note">Build relevé dans le log du ${when}${donjon?` · ${esc(donjon)}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}. L'objectif vient de « Mon build objectif » (enregistré dans ce navigateur).</p>`:""}
+    <p class="note">Build de ${esc(P0.nom)} relevé dans le log du ${when}${donjon?` · ${esc(donjon)}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}. L'objectif vient de « Mon build objectif » (enregistré dans ce navigateur).</p>`:""}
   </section>${body}`;
 }
 
@@ -863,6 +858,7 @@ function select(h){
 document.addEventListener("click", e => {
   const t = e.target.closest(".tab"); if(t && !t.disabled){ location.hash = t.dataset.h; return; }
   const m = e.target.closest(".mode"); if(m){ mode = m.dataset.mode; try{ localStorage.setItem("mode", mode); }catch(err){} render(); return; }
+  if(mode === "cmp" && e.target.closest("[data-act=follow]")){ doFollow(); return; }
   if(mode === "plan"){ const a = e.target.closest("[data-act]"); if(a && !a.disabled) planClick(a); return; }
   const c = e.target.closest(".chip"); if(c){ enc = c.dataset.e; render(); }
 });

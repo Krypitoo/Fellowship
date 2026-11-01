@@ -94,7 +94,7 @@ def find_build(client, nom, heros):
                             "encounter": f.get("encounterID"),
                             "date": (info.get("startTime") or 0) + (f.get("startTime") or 0),
                             "info": p["combatantInfo"]}
-    return {"erreur": "aucun combat de donjon trouve dans les derniers logs" + (f" avec {heros}" if heros else "")}
+    return {"erreur": "aucun combat de donjon trouvé dans les derniers logs" + (f" avec {heros}" if heros else "")}
 
 
 def main():
