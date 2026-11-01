@@ -111,6 +111,8 @@ table.cmp td{vertical-align:middle}
 .follow{padding-top:10px;border-top:1px solid var(--line)}
 .herolink{color:color-mix(in srgb,var(--hc) var(--hmix),#000);font-weight:600;border-color:color-mix(in srgb,var(--hc) 45%,var(--line))}
 #pseudo{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:180px}
+.infoi{display:inline-grid;place-items:center;width:16px;height:16px;border:1.5px solid var(--mute);border-radius:50%;font:700 10.5px/1 Georgia,serif;font-style:italic;color:var(--mute);margin-right:7px;vertical-align:-3px;cursor:help}
+.infoi:hover,.infoi:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
 .btn:disabled{opacity:.5;cursor:default}
 .btn.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:600}
 .fstat{font-size:13px;color:var(--mute);display:inline-flex;gap:8px;align-items:center}
@@ -878,7 +880,7 @@ function renderCmp(){
       <select id="cmpBuild">${Object.entries(S.builds).map(([id,x])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(x.name)}</option>`).join("")}</select>
     </div>
     ${b?`<div class="score"><div class="sbar"><div style="width:${pctOk}%"></div></div><b>${ok} / ${tot}</b> objectifs atteints (${pctOk} %)</div>
-    <p class="note">Build de ${esc(P0.nom)} relevé dans le log du ${when}${donjon?` · ${esc(donjon)}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}. L'objectif vient de « Mon build objectif » (enregistré dans ce navigateur).</p>`:""}
+    <p class="note"><span class="infoi" tabindex="0" role="img" aria-label="Comment le build est relevé" data-info="Ton build est relevé dans ton dernier log publié sur Fellowship Logs : le donjon le plus récent joué avec ce héros. Il est relu à 20 h, 2 h et 13 h, ou sur demande avec « Actualiser maintenant ».">i</span>Build de ${esc(P0.nom)} relevé dans le log du ${when}${donjon?` · ${esc(donjon)}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}. L'objectif vient de « Mon build objectif » (enregistré dans ce navigateur).</p>`:""}
   </section>${body}`;
 }
 
@@ -965,10 +967,18 @@ function showGemTip(el){
   }
   placeTip(el);
 }
+function showInfoTip(el){
+  tipEl.classList.add("wide");
+  tipEl.innerHTML = `<div>${esc(el.dataset.info)}</div>`;
+  placeTip(el);
+}
+document.addEventListener("click", e => { const i = e.target.closest("[data-info]"); if(i) showInfoTip(i); });
 document.addEventListener("mouseover", e => {
+  const inf = e.target.closest("[data-info]"); if(inf){ showInfoTip(inf); return; }
   const g = e.target.closest("[data-gem]"); if(g){ showGemTip(g); return; }
   const el = e.target.closest(".ic[data-tip]"); if(el) showTip(el); else if(!e.target.closest("#tip")) hideTip(); });
-document.addEventListener("focusin", e => { const g = e.target.closest("[data-gem]"); if(g) showGemTip(g); });
+document.addEventListener("focusin", e => { const g = e.target.closest("[data-gem]"); if(g) showGemTip(g);
+  const i = e.target.closest("[data-info]"); if(i) showInfoTip(i); });
 document.addEventListener("focusin", e => { const el = e.target.closest(".ic[data-tip]"); if(el) showTip(el); });
 document.addEventListener("focusout", hideTip);
 window.addEventListener("scroll", hideTip, {passive:true});
