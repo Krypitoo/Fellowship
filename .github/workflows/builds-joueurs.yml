@@ -1,0 +1,57 @@
+name: Builds des joueurs suivis
+
+# 20 h, 2 h et 13 h (heure de Paris en hiver ; GitHub compte en UTC, donc 21 h, 3 h et 14 h en ete)
+on:
+  schedule:
+    - cron: "7 19 * * *"
+    - cron: "7 1 * * *"
+    - cron: "7 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mise-a-jour
+  cancel-in-progress: false
+
+jobs:
+  joueurs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: cache
+          key: api-cache-${{ github.run_id }}
+          restore-keys: api-cache-
+
+      - name: Builds des joueurs suivis
+        env:
+          FELLOWSHIP_CLIENT_ID: ${{ secrets.FELLOWSHIP_CLIENT_ID }}
+          FELLOWSHIP_CLIENT_SECRET: ${{ secrets.FELLOWSHIP_CLIENT_SECRET }}
+        run: python suivre_joueurs.py
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: cache
+          key: api-cache-${{ github.run_id }}
+
+      - name: Mise a jour du site (sans relancer la collecte du top 30)
+        run: python build_site.py --from-html docs/index.html --joueurs resultats/joueurs_suivis.json -o docs/index.html
+
+      - name: Publication
+        run: |
+          git config user.name "maj-auto"
+          git config user.email "maj-auto@users.noreply.github.com"
+          git add docs/index.html
+          git diff --cached --quiet || git commit -m "Builds des joueurs suivis $(date -u +%F\ %Hh)"
+          git pull --rebase
+          git push
