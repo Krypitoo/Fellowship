@@ -9,16 +9,48 @@ suivre_joueurs.py - recupere le build actuel des joueurs listes dans joueurs.jso
 joueurs.json : [{"nom": "Kerdead", "heros": "Helena"}, ...]  ("heros" est facultatif :
 sans lui, on prend le heros joue dans le dernier log).
 """
+import csv
+import io
 import json
 import os
+import re
 import sys
 import time
+import urllib.request
 from pathlib import Path
 
-from comparer_builds import Client, OUT_DIR, cache_get, cache_put, fetch_fight_players
+from comparer_builds import Client, KNOWN_HEROES, OUT_DIR, cache_get, cache_put, fetch_fight_players
 
 HERE = Path(__file__).resolve().parent
 LISTE = HERE / "joueurs.json"
+FORM = HERE / "formulaire.json"            # pseudos envoyes depuis le site (formulaire Google)
+PSEUDO_OK = re.compile(r"^[^\W_][\w' .-]{1,23}$", re.UNICODE)
+
+
+def form_players():
+    """Pseudos saisis sur le site : le plus recent d'abord, un seul par pseudo, format verifie."""
+    if not FORM.exists():
+        return []
+    cfg = json.loads(FORM.read_text(encoding="utf-8"))
+    try:
+        raw = urllib.request.urlopen(cfg["reponses_csv"], timeout=30).read().decode("utf-8")
+    except Exception as e:
+        print(f"Formulaire illisible : {e}")
+        return []
+    rows = list(csv.reader(io.StringIO(raw)))[1:]
+    seen, out = set(), []
+    for r in reversed(rows):                      # les reponses les plus recentes en premier
+        if len(r) < 3:
+            continue
+        nom, heros = r[1].strip(), r[2].strip().capitalize()
+        if not PSEUDO_OK.match(nom) or heros not in KNOWN_HEROES:
+            continue
+        key = (nom.lower(), heros)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"nom": nom, "heros": heros, "source": "site"})
+    return out[: int(cfg.get("max_joueurs", 100))]
 MAX_REPORTS = 5
 
 
@@ -69,8 +101,16 @@ def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     liste = json.loads(LISTE.read_text(encoding="utf-8")) if LISTE.exists() else []
+    connus = {(j["nom"].lower(), j.get("heros")) for j in liste}
+    for j in form_players():
+        if (j["nom"].lower(), j["heros"]) not in connus:
+            liste.append(j)
+            connus.add((j["nom"].lower(), j["heros"]))
+    print(f"{len(liste)} joueur(s) a suivre")
     if not liste:
-        print("joueurs.json vide : rien a faire"); return
+        OUT_DIR.mkdir(exist_ok=True)
+        (OUT_DIR / "joueurs_suivis.json").write_text("[]", encoding="utf-8")
+        print("Aucun joueur a suivre"); return
     client = Client(os.environ["FELLOWSHIP_CLIENT_ID"], os.environ["FELLOWSHIP_CLIENT_SECRET"])
     out = []
     for j in liste:

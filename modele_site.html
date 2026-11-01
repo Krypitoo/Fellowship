@@ -105,6 +105,10 @@ table.cmp td{vertical-align:middle}
 .ctile.miss .cnt{color:var(--legend);font-weight:600} .ctile.ok .cnt{color:var(--core);font-weight:600}
 .ctile.extra .nm{text-decoration:line-through;color:var(--mute)}
 .ctile.off{opacity:.4}
+.follow{padding-top:10px;border-top:1px solid var(--line)}
+#pseudo{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:180px}
+.btn.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:600}
+.fstat{font-size:13px;color:var(--mute);display:inline-flex;gap:8px;align-items:center}
 .score{display:flex;align-items:center;gap:12px;font-size:14px}
 .score .sbar{flex:0 1 260px;height:10px;background:var(--track);border-radius:5px;overflow:hidden}
 .score .sbar div{height:100%;background:var(--core)}
@@ -619,7 +623,13 @@ function renderPlan(){
     ${planUi.imp?`<div class="pb-box"><label for="impCode">Colle un code de build exporté :</label>
       <textarea id="impCode" rows="3" placeholder="Code du build"></textarea><button type="button" class="btn" data-act="imp-go">Importer ce build</button></div>`:""}
     ${planUi.msg?`<p class="pb-msg">${esc(planUi.msg)}</p>`:""}
-    <p class="note">Tes builds sont enregistrés automatiquement dans ce navigateur, sur cet appareil. Pour les retrouver ailleurs, utilise Exporter puis Importer.</p>
+    ${DATA.form?`<div class="pb-row follow">
+      <label for="pseudo">Mon pseudo</label>
+      <input id="pseudo" type="text" maxlength="24" placeholder="Pseudo Fellowship Logs" value="${esc(getPseudo())}" autocomplete="nickname">
+      <button type="button" class="btn primary" data-act="follow">Suivre mon avancement</button>
+      <span class="fstat">${followStatus()}</span>
+    </div>`:""}
+    <p class="note">Tes builds sont enregistrés automatiquement dans ce navigateur, sur cet appareil. Pour les retrouver ailleurs, utilise Exporter puis Importer.${DATA.form?` Avec ton pseudo, ton build réel est relevé dans tes logs Fellowship Logs à 20 h, 2 h et 13 h, et l'onglet Comparer te montre ce qui te manque.`:""}</p>
   </section>
   <div class="grid">
     <section class="panel full">
@@ -698,6 +708,15 @@ function planClick(t){
     case "del-no": planUi.del = false; renderPlan(); return;
     case "exp": planUi.exp = !planUi.exp; planUi.imp = false; renderPlan(); return;
     case "imp": planUi.imp = !planUi.imp; planUi.exp = false; renderPlan(); return;
+    case "follow": {
+      const nom = ($("#pseudo").value || "").trim();
+      if(!PSEUDO_RE.test(nom)){ flash("Pseudo invalide : 2 à 24 caractères, lettres, chiffres, espaces, . - '"); return; }
+      setPseudo(nom);
+      const body = new URLSearchParams({[DATA.form.champ_pseudo]: nom, [DATA.form.champ_heros]: hero});
+      fetch(DATA.form.envoi, {method:"POST", mode:"no-cors", body})
+        .then(() => { markFollowed(nom, hero); flash("Pseudo enregistré"); renderPlan(); })
+        .catch(() => flash("Envoi impossible : vérifie ta connexion et réessaie"));
+      return; }
     case "copy": { const ta=$("#expCode"); const done=()=>flash("Code copié");
       if(navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, ()=>{ ta.select(); flash("Sélectionné : Ctrl+C pour copier"); });
       else { ta.select(); flash("Sélectionné : Ctrl+C pour copier"); } return; }
@@ -727,6 +746,22 @@ document.addEventListener("change", e => {
   if(mode === "plan" && e.target.id === "buildSel"){ heroStore().cur = e.target.value; planUi = {exp:false,imp:false,del:false,msg:""}; saveStore(); renderPlan(); }
 });
 
+// Pseudo du visiteur et suivis demandes (gardes dans ce navigateur)
+const PSEUDO_RE = /^[^\W_][\w' .-]{1,23}$/u;
+function getPseudo(){ try{ return localStorage.getItem("fellowship-pseudo") || ""; }catch(e){ return ""; } }
+function setPseudo(n){ try{ localStorage.setItem("fellowship-pseudo", n); }catch(e){} }
+function followed(){ try{ return JSON.parse(localStorage.getItem("fellowship-suivis")) || {}; }catch(e){ return {}; } }
+function markFollowed(n, h){ const f = followed(); f[(n+"|"+h).toLowerCase()] = Date.now(); try{ localStorage.setItem("fellowship-suivis", JSON.stringify(f)); }catch(e){} }
+const isFollowed = (n, h) => !!n && !!followed()[(n+"|"+h).toLowerCase()];
+function followStatus(){
+  const n = getPseudo(); if(!n) return "";
+  const p = (DATA.players||[]).find(x => x.nom.toLowerCase() === n.toLowerCase() && x.heros === hero);
+  if(p && p.build) return `<span class="st ok">Suivi actif</span> voir l'onglet Comparer`;
+  if(p && p.erreur) return `<span class="st miss">${esc(p.erreur)}</span>`;
+  if(isFollowed(n, hero)) return `<span class="st extra">En attente</span> relevé à la prochaine mise à jour (20 h, 2 h ou 13 h)`;
+  return "";
+}
+
 // ======================= Mode « Comparer » : build réel d'un joueur suivi vs build objectif =======================
 let cmpUi = {player:""};
 const tierOf = p => { let t = 0; TIER_POW.forEach((v,i)=>{ if(p >= v && v > 0) t = i; }); return t; };
@@ -735,13 +770,17 @@ const chip = (cls, txt) => `<span class="st ${cls}">${txt}</span>`;
 function renderCmp(){
   const A = DATA.heroes[hero].all, S = heroStore(), B = S.builds[S.cur];
   const all = DATA.players || [], mine = all.filter(p => p.heros === hero);
+  const me = getPseudo().toLowerCase(), mineMe = mine.find(p => p.nom.toLowerCase() === me);
+  if(!cmpUi.player && mineMe) cmpUi.player = mineMe.nom;
   if(!mine.find(p => p.nom === cmpUi.player)) cmpUi.player = mine[0] ? mine[0].nom : "";
   const P0 = mine.find(p => p.nom === cmpUi.player);
   const head = `<div class="hero-head"><h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}</div>`;
+  const waiting = isFollowed(getPseudo(), hero) && !mineMe;
   if(!mine.length){
     const others = all.filter(p=>p.heros && p.build).map(p=>`${esc(p.nom)} (${esc(p.heros)})`).join(", ");
     $("#app").innerHTML = head + `<section class="panel full"><h2>Comparer</h2>
-      <p>Aucun joueur suivi ne joue ${esc(hero)} pour l'instant.</p>
+      ${waiting?`<p><b>${esc(getPseudo())}</b> est enregistré pour ${esc(hero)} : ton build apparaîtra ici après la prochaine mise à jour (20 h, 2 h ou 13 h).</p>`
+        :`<p>Aucun joueur suivi ne joue ${esc(hero)} pour l'instant.</p>${DATA.form?`<p class="note">Pour suivre ton avancement : onglet « Mon build objectif », saisis ton pseudo puis « Suivre mon avancement ».</p>`:""}`}
       ${others?`<p class="note">Joueurs suivis sur d'autres héros : ${others}.</p>`:""}
       <p class="note">Les joueurs suivis sont listés dans le fichier <code>joueurs.json</code> du site ; leur build est relu chaque nuit dans leurs derniers logs Fellowship Logs.</p></section>`;
     return;

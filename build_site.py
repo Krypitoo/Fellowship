@@ -407,6 +407,10 @@ def render(data, out, fragment):
     desc_file = HERE / "descriptions.json"   # descriptions copiees depuis fellows.gg
     if desc_file.exists():
         data["desc"] = json.loads(desc_file.read_text(encoding="utf-8"))
+    form_file = HERE / "formulaire.json"   # adresse publique du formulaire de suivi (sans secret)
+    if form_file.exists():
+        f = json.loads(form_file.read_text(encoding="utf-8"))
+        data["form"] = {k: f[k] for k in ("envoi", "champ_pseudo", "champ_heros")}
     gem_file = HERE / "gemmes.json"   # bonus de gemmes copies depuis fellows.gg
     if gem_file.exists():
         data["gemBonus"] = json.loads(gem_file.read_text(encoding="utf-8"))
