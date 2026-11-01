@@ -8,16 +8,18 @@
 :root{
   --bg:#eef1f4; --panel:#ffffff; --ink:#1b2430; --mute:#5d6878; --line:#d5dbe3;
   --accent:#2f6690; --accent-soft:#dbe7f1; --core:#1f7a52; --legend:#c46a12;
-  --track:#e3e8ee; --hmix:58%;
+  --track:#e3e8ee; --hmix:58%; --bad:#c62828;
   --display:"Cinzel", "Trajan Pro", Georgia, serif;
   --body:"IBM Plex Sans", system-ui, "Segoe UI", sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bad:#ef5350;
   --hmix:100%;
   --bg:#11161d; --panel:#18202a; --ink:#e6ebf1; --mute:#93a0b1; --line:#2a3542;
   --accent:#6fa8d6; --accent-soft:#1f3346; --core:#4cc28a; --legend:#f0a050; --track:#243040; color-scheme:dark}}
 :root[data-theme="dark"]{
+  --bad:#ef5350;
   --hmix:100%;
   --bg:#11161d; --panel:#18202a; --ink:#e6ebf1; --mute:#93a0b1; --line:#2a3542;
   --accent:#6fa8d6; --accent-soft:#1f3346; --core:#4cc28a; --legend:#f0a050; --track:#243040; color-scheme:dark}
@@ -99,6 +101,8 @@ td.n small{color:var(--mute)}
 .st.ok{background:color-mix(in srgb,var(--core) 18%,var(--panel));color:var(--core)}
 .st.miss{background:color-mix(in srgb,var(--legend) 18%,var(--panel));color:var(--legend)}
 .st.extra{background:var(--track);color:var(--mute)}
+.st.bad{--s:0;background:color-mix(in srgb,var(--bad) calc(16% + var(--s)*84%),var(--panel));color:var(--bad)}
+.st.bad.hot{color:#fff}
 table.cmp td{vertical-align:middle}
 .ctile.ok{border-color:var(--core);background:color-mix(in srgb,var(--core) 14%,var(--panel))}
 .ctile.miss{border-color:var(--legend);background:color-mix(in srgb,var(--legend) 12%,var(--panel))}
@@ -760,6 +764,7 @@ function followStatus(){
 
 // Demande d'actualisation : envoyee au formulaire, traitee toutes les 15 min ; 1 par heure et par personne
 const REFRESH_MS = 3600 * 1000;
+const STAT_TOL = 20;   // ecart de stat toleré par rapport a l'objectif
 function lastRefresh(){ try{ return +localStorage.getItem("fellowship-actualise") || 0; }catch(e){ return 0; } }
 function doRefresh(){
   const nom = getPseudo(); if(!nom) return;
@@ -834,8 +839,12 @@ function renderCmp(){
       return `<div class="tile ctile ${cls}"><div class="icw">${ic(t.name,"lg")}</div><div class="tx"><div class="nm">${esc(t.name)}</div><div class="cnt">${lab}</div></div></div>`; }).join("");
     // Stats
     const srows = STAT_KEYS.map(k => { const cur = b.stats[k], tgt = B.stats[k]; if(tgt==null || cur==null) return "";
-      const d = cur - tgt, good = count(Math.abs(d) <= 5);
-      return `<tr><td>${STAT_FR[k]}</td><td class="n"><b>${fr(cur)}</b> <small>${fr(b.pct[k],1)} %</small></td><td class="n">${fr(tgt)}</td><td class="n">${good?chip("ok","✓"):chip(d<0?"miss":"extra",(d>0?"+":"−")+fr(Math.abs(d)))}</td></tr>`; }).join("");
+      const d = cur - tgt, ad = Math.abs(d), good = count(ad <= STAT_TOL);
+      // au-dela de la tolerance, plus l'ecart est grand (au-dessus comme en dessous), plus c'est rouge
+      const sev = Math.min(1, (ad - STAT_TOL) / 80);
+      return `<tr><td>${STAT_FR[k]}</td><td class="n"><b>${fr(cur)}</b> <small>${fr(b.pct[k],1)} %</small></td><td class="n">${fr(tgt)}</td><td class="n">${good
+        ? chip("ok", ad ? `✓ ${d>0?"+":"−"}${fr(ad)}` : "✓")
+        : `<span class="st bad${sev>0.4?" hot":""}" style="--s:${sev.toFixed(2)}">${d>0?"+":"−"}${fr(ad)}</span>`}</td></tr>`; }).join("");
     // Gemmes
     const grows = GEM_ORDER.map(k => { const tgt = B.gems[k]; if(tgt==null) return ""; const cur = b.gems[k]||0, ct = tierOf(cur);
       const good = count(ct >= tgt);
@@ -856,7 +865,7 @@ function renderCmp(){
       <section class="panel full"><h2>Talents</h2><div class="tgrid${TALENT_LAYOUT[hero]?" game":""}">${tiles}</div>
         <p class="note">Vert : pris comme prévu. Orange : prévu dans l'objectif mais pas pris. Gris barré : pris mais pas dans l'objectif.</p></section>
       <section class="panel"><h2>Stats secondaires</h2>${tbl("Stat", srows || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`)}
-        <p class="note">Atteint à ±5 près. Écart en valeur brute.</p></section>
+        <p class="note">Atteint à ±${STAT_TOL} près. Au-delà, plus l'écart est grand (au-dessus comme en dessous de l'objectif), plus le statut est rouge.</p></section>
       <section class="panel"><h2>Gemmes</h2>${tbl("Couleur", grows || `<tr><td colspan="4" class="empty">Aucun objectif fixé.</td></tr>`)}</section>
       <section class="panel"><h2>Aspects</h2>${tbl("Aspect", rankRows(B.aspects, b.traits, "rang"))}</section>
       <section class="panel"><h2>Sigils</h2>${tbl("Sigil", rankRows(B.sigils, b.traits, "rang"))}</section>
