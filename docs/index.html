@@ -117,6 +117,7 @@ table.cmp td{vertical-align:middle}
 #pseudo{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:180px}
 .infoi{display:inline-grid;place-items:center;width:16px;height:16px;border:1.5px solid var(--mute);border-radius:50%;font:700 10.5px/1 Georgia,serif;font-style:italic;color:var(--mute);margin-right:7px;vertical-align:-3px;cursor:help}
 .planbar{position:relative}
+.infoi.head{margin:0 0 6px auto;width:20px;height:20px;font-size:12px}
 .infoi.corner{position:absolute;top:12px;right:12px;margin:0;width:20px;height:20px;font-size:12px}
 #tip .tt-p{margin:0 0 6px} #tip .tt-p:last-child{margin:0}
 .infoi:hover,.infoi:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
@@ -447,12 +448,11 @@ function render(){
   $("#app").innerHTML = `
   <div class="hero-head">
     <h1 class="hname" style="--hc:${heroColor(hero)}">${esc(hero)}</h1>${modeSwitch()}
-    <div class="meta">
-      <span><b>${A.n}</b> builds</span>
-      <span>${encLabel}</span>
-      ${A.key?`<span>Clés <b>+${A.key[0]}</b> à <b>+${A.key[2]}</b> (médiane +${fr(A.key[1])})</span>`:""}
-      ${A.score?`<span>Score <b>${fr(A.score[0])}</b> – <b>${fr(A.score[2])}</b></span>`:""}
-    </div>
+    <span class="infoi head" tabindex="0" role="img" aria-label="Données analysées" data-info="${esc([
+      `${A.n} builds analysés : le top 30 de chaque donjon sur Fellowship Logs.`,
+      enc==="all" ? `${encs.length} donjon${encs.length>1?"s":""} pris en compte.` : `Donjon : ${DATA.encounters[enc]}.`,
+      A.key ? `Clés +${A.key[0]} à +${A.key[2]} (médiane +${fr(A.key[1])}).` : "",
+      A.score ? `Score ${fr(A.score[0])} à ${fr(A.score[2])}.` : ""].filter(Boolean).join("\n\n"))}">i</span>
   </div>
   <div class="filters" role="group" aria-label="Donjon">
     <button class="chip" type="button" data-e="all" aria-pressed="${enc==="all"}">Tous les donjons<span>${H.all.n}</span></button>
