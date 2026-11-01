@@ -109,6 +109,9 @@ table.cmp td{vertical-align:middle}
 .herolink{color:color-mix(in srgb,var(--hc) var(--hmix),#000);font-weight:600;border-color:color-mix(in srgb,var(--hc) 45%,var(--line))}
 #pseudo{font:14px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:180px}
 .infoi{display:inline-grid;place-items:center;width:16px;height:16px;border:1.5px solid var(--mute);border-radius:50%;font:700 10.5px/1 Georgia,serif;font-style:italic;color:var(--mute);margin-right:7px;vertical-align:-3px;cursor:help}
+.planbar{position:relative}
+.infoi.corner{position:absolute;top:12px;right:12px;margin:0;width:20px;height:20px;font-size:12px}
+#tip .tt-p{margin:0 0 6px} #tip .tt-p:last-child{margin:0}
 .infoi:hover,.infoi:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
 .btn:disabled{opacity:.5;cursor:default}
 .btn.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:600}
@@ -862,8 +865,14 @@ function renderCmp(){
     </div>`;
   }
   const pctOk = tot ? Math.round(100*ok/tot) : 0;
+  const info = [
+    "Ton build est relevé dans ton dernier log publié sur Fellowship Logs : le donjon le plus récent joué avec ce héros.",
+    "Il est relu à 20 h, 2 h et 13 h, ou sur demande avec « Actualiser maintenant ».",
+    b ? `Build actuel : log du ${when}${donjon?` · ${donjon}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}.` : "",
+    "L'objectif vient de « Mon build objectif », enregistré dans ce navigateur."].filter(Boolean).join("\n\n");
   $("#app").innerHTML = head + `
   <section class="panel full planbar">
+    <span class="infoi corner" tabindex="0" role="img" aria-label="Comment le build est relevé" data-info="${esc(info)}">i</span>
     ${DATA.form?`<div class="pb-row">
       <label for="pseudo">Mon pseudo</label>
       <input id="pseudo" type="text" maxlength="24" placeholder="Pseudo Fellowship Logs" value="${esc(me)}" autocomplete="nickname">
@@ -876,7 +885,7 @@ function renderCmp(){
       <select id="cmpBuild">${Object.entries(S.builds).map(([id,x])=>`<option value="${id}"${id===S.cur?" selected":""}>${esc(x.name)}</option>`).join("")}</select>
     </div>
     ${b?`<div class="score"><div class="sbar"><div style="width:${pctOk}%"></div></div><b>${ok} / ${tot}</b> objectifs atteints (${pctOk} %)</div>
-    <p class="note"><span class="infoi" tabindex="0" role="img" aria-label="Comment le build est relevé" data-info="Ton build est relevé dans ton dernier log publié sur Fellowship Logs : le donjon le plus récent joué avec ce héros. Il est relu à 20 h, 2 h et 13 h, ou sur demande avec « Actualiser maintenant ».">i</span>Build de ${esc(P0.nom)} relevé dans le log du ${when}${donjon?` · ${esc(donjon)}`:""}${b.ilvl?` · niveau d'objet moyen ${fr(b.ilvl,1)}`:""}. L'objectif vient de « Mon build objectif » (enregistré dans ce navigateur).</p>`:""}
+`:""}
   </section>${body}`;
 }
 
@@ -965,7 +974,7 @@ function showGemTip(el){
 }
 function showInfoTip(el){
   tipEl.classList.add("wide");
-  tipEl.innerHTML = `<div>${esc(el.dataset.info)}</div>`;
+  tipEl.innerHTML = el.dataset.info.split(/\n{2,}/).map(p => `<p class="tt-p">${esc(p)}</p>`).join("");
   placeTip(el);
 }
 document.addEventListener("click", e => { const i = e.target.closest("[data-info]"); if(i) showInfoTip(i); });
